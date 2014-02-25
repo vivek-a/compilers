@@ -12,3 +12,4 @@ scanner.cc
 scannerbase.h
 *~
 out*
+tmp*

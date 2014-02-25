@@ -32,6 +32,7 @@
 using namespace std;
 
 //enum relation_operators {LE,GE,GT,LT,EQ,NE,AND,OR,NOT};
+//enum arith_ops {PLUS,MINUS,MULT,DIV};
 
 class Ast;
 
@@ -167,6 +168,49 @@ public:
 	Eval_Result & evaluate(Local_Environment & eval_env, ostream & file_buffer);
 };
 
+class Arith_Expr_Ast:public Ast
+{
+	Ast * lhs;
+	Ast * rhs;
+	string op;
 
+public:
+	Arith_Expr_Ast(Ast * temp_lhs, Ast * temp_rhs , string temp_op);
+	~Arith_Expr_Ast();
+
+	Data_Type get_data_type();
+	bool check_ast(int line);
+
+	void print_ast(ostream & file_buffer);
+
+	Eval_Result & evaluate(Local_Environment & eval_env, ostream & file_buffer);
+};
+
+class Typecast_Expr_Ast:public Ast
+{
+	Ast * lhs;
+	string type;
+
+public:
+	Typecast_Expr_Ast(Ast * temp_lhs,string temp_op);
+	~Typecast_Expr_Ast();
+	Data_Type get_data_type();
+	void print_ast(ostream & file_buffer);
+
+	Eval_Result & evaluate(Local_Environment & eval_env, ostream & file_buffer);
+};
+
+class Unary_Expr_Ast:public Ast
+{
+	Ast * lhs;
+
+public:
+	Unary_Expr_Ast(Ast * temp_lhs);
+	~Unary_Expr_Ast();
+	Data_Type get_data_type();
+	void print_ast(ostream & file_buffer);
+
+	Eval_Result & evaluate(Local_Environment & eval_env, ostream & file_buffer);
+};
 
 #endif

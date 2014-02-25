@@ -1,6 +1,6 @@
 # !/bin/bash
 
 make -f Makefile.cfglp
-./cfglp test_files/GlobTernaryInIfLoop.cs306.cfg -d -tokens > out1
-./cfglp64 test_files/GlobTernaryInIfLoop.cs306.cfg -d -tokens > out2
+./cfglp test_files/FloatVal.cs306.cfg -d -tokens -ast  -eval > out1
+./cfglp64 test_files/FloatVAl.cs306.cfg -d  -tokens -ast  -eval > out2
 diffuse out1 out2

@@ -1,13 +1,31 @@
 110050039 Vivek Atulkar
 110050048 Sudipto Biswas
 
-Part-3a
+Part-3b
+We added the following new grammar rules :
+-arithmetic_expression
+-term
+-factor
 
-Changes in Scanner.ll file :
+Now modifications in files------------------
+
+In Scanner.ll :
 new tokens FLOAT , DOUBLE are introduced
 
-Changes in Parser.yy file :
+In Parser.yy :
 -Grammer for arithmetic expression is added.
 -new production/tags made:
 --arithmetic_expression
 --"typeCast" which can be '(' FLOAT ')' | '(' INTEGER ')' | '(' DOUBLE ')' | '-' 
+
+In ast.cc && ast.hh :
+New Class added:
+-Arith_Expr_Ast
+-Typecast_Expr_Ast
+-Unary_Expr_Ast
+
+In local_environment.cc && local_environment.hh:
+-new enum float_result is added
+-new class added Eval_Result_Value_Float
+
+**setprecision function is used to set precision value of floats to 2 from iomanip library.
