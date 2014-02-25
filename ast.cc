@@ -190,6 +190,13 @@ Eval_Result & Number_Ast<DATA_TYPE>::evaluate(Local_Environment & eval_env, ostr
 
 		return result;
 	}
+	// else if (node_data_type == double_data_type)
+	// {
+	// 	Eval_Result & result = *new Eval_Result_Value_Float();
+	// 	result.set_value(constant);
+
+	// 	return result;
+	// }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -216,6 +223,7 @@ Eval_Result & Return_Ast::evaluate(Local_Environment & eval_env, ostream & file_
 }
 
 template class Number_Ast<int>;
+template class Number_Ast<double>;
 
 ////////////////////////////////////////////////////////////////////////////////
 

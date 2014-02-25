@@ -55,13 +55,6 @@
 			return Parser::GE; 
 		}
 
-// !		{
-// 			store_token_name("NOT");
-// 			// ParserBase::STYPE__ * val = getSval();
-// 			// val->integer_value=NOT;
-// 			return Parser::NOT; 
-// 		}
-
 !=		{
 			store_token_name("NE");
 			// ParserBase::STYPE__ * val = getSval();
@@ -81,23 +74,19 @@
 			return Parser::ASSIGN_OP; 
 		}
 
-// \&\&	{
-// 			store_token_name("AND");
-// 			// ParserBase::STYPE__ * val = getSval();
-// 			// val->integer_value=AND;
-// 			return Parser::AND; 
-// 		}
-
-// \|\|	{
-// 			store_token_name("OR");
-// 			// ParserBase::STYPE__ * val = getSval();
-// 			// val->integer_value=OR;
-// 			return Parser::OR; 
-// 		}
-
 int		{
 			store_token_name("INTEGER");
 			return Parser::INTEGER;
+		}
+
+float		{
+			store_token_name("FLOAT");
+			return Parser::FLOAT;
+		}
+
+double		{
+			store_token_name("DOUBLE");
+			return Parser::DOUBLE;
 		}
 
 return	{ 
@@ -134,13 +123,26 @@ goto	{
 			return matched()[0];
 		}
 
-[-]?[[:digit:]_]+ 	{ 
+[-+*\/] {
+			store_token_name("ARITHOP");
+			return matched()[0]; 
+		}
+
+[-]?[[:digit:]]+ 	{ 
 				store_token_name("NUM");
 
 				ParserBase::STYPE__ * val = getSval();
 				val->integer_value = atoi(matched().c_str());
 
 				return Parser::INTEGER_NUMBER; 
+			}
+
+[-]?[0-9]+\.[0-9]+	{ 
+				store_token_name("FNUM");
+
+				ParserBase::STYPE__ * val = getSval();
+				val->double_value = atof(matched().c_str());
+				return Parser::DOUBLE_NUMBER; 
 			}
 
 [[:alpha:]_][[:alpha:][:digit:]_]* {
