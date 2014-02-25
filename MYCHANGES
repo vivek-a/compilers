@@ -1,0 +1,58 @@
+110050039 Vivek Atulkar
+110050048 Sudipto Biswas
+
+Part-2a
+
+We added the following new grammar rules :
+if_else_loop
+go_to_statement
+relational_expression 
+
+modified the following rules :
+-We have changed the definition of basic block and added "executable_statement" tag which 
+	contains "if_else_loop" and "go_to_statement" or NULL 
+-We have modified assignment statement i.e. " variable ASSIGN_OP relational_expression "
+
+added new token specifications :
+IF,ELSE,GOTO,ASSIGN_OP,LT,LE,GT,GE,NE,EQ,BASIC_BLOCK
+
+new META CHARs are appended:
+!,&,|
+
+Now modifications in files------------------
+
+In Parser.h and Parser.ih :
+Made a new function "bb_existence_check" which takes list of basic blocks and and list of goto_statements
+which checks wheather basic block exist in program or not.
+
+In Procedure.hh and Procedure.cc :
+Changed the function Procedure::evaluate(..)
+so that it can 
+jump to required goto block 
+or exit on return 
+or simply updates current basic_block to next basic_block.
+
+In Parser.h :
+added the function bb_existence_check
+a vector which contains list bb numbers appeared in goto statements.
+added a variable " bool successor " whick keeps track of successor of basic block.
+	this variable is true when bb contains return,if_else,goto.
+
+In basic-block.cc and basic-block.hh :
+changed the constructor,added new functions:  get_successor , set_successor
+while printing and evaluating successor variable is checked.
+
+In ast.cc and ast.hh :
+new variable is added in ast class ( basic_block_number ) which will be used by goto statement to store bb number.
+New Asts child classes are made : 
+	Goto_Ast
+	If_Else_Loop_Ast
+	Relational_Expr_Ast
+
+In Parser.yy :
+Action procedures are written for every tags.
+
+
+
+
+
