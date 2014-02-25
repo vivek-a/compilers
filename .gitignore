@@ -1,0 +1,14 @@
+*.cfg
+*.ast
+*.eval
+*.toks
+*.out
+*.o
+cfglp
+parser.cc
+*.output
+parserbase.h
+scanner.cc
+scannerbase.h
+*~
+out*
