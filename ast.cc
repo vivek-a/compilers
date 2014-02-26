@@ -116,12 +116,19 @@ void Name_Ast::print_value(Local_Environment & eval_env, ostream & file_buffer)
 
 	else
 	{
-		if (glob_var_val->get_result_enum() == int_result || glob_var_val->get_result_enum() == float_result)
+		if (glob_var_val->get_result_enum() == int_result)
 		{
 			if (glob_var_val == NULL)
 				file_buffer << "0\n";
 			else
-				file_buffer << glob_var_val->get_value() << "\n";
+				file_buffer << fixed << setprecision(0) << glob_var_val->get_value() << "\n";
+		}
+		else if (glob_var_val->get_result_enum() == float_result)
+		{
+			if (glob_var_val == NULL)
+				file_buffer << "0\n";
+			else
+				file_buffer << fixed << setprecision(2) << glob_var_val->get_value() << "\n";
 		}
 		else
 			report_internal_error("Result type can only be int and float");
@@ -203,7 +210,7 @@ void Number_Ast<DATA_TYPE>::print_ast(ostream & file_buffer)
 	}
 	else{
 		//cout<<"int hai ye.......\n ";
-		file_buffer << "Num : " << constant;
+		file_buffer << "Num : " << fixed << std::setprecision(0) << constant;
 	}
 }
 
@@ -647,7 +654,7 @@ Eval_Result & Typecast_Expr_Ast::evaluate(Local_Environment & eval_env, ostream 
 
 	else if(this->get_data_type() == float_data_type)
 	{
-		float_result.set_value( (float) result_lhs.get_value() );
+		float_result.set_value( result_lhs.get_value() );
 		return float_result;
 	} 
 	
