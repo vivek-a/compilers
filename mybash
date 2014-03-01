@@ -1,6 +1,6 @@
 # !/bin/bash
 
 make -f Makefile.cfglp
-./cfglp test_files/RetInFor.cs306.cfg -d -tokens -ast  -eval > out1
-./cfglp64 test_files/RetInFor.cs306.cfg -d  -tokens -ast  -eval > out2
+./cfglp test_files/UnaryPlus.cs306.cfg -d -tokens  > out1
+./cfglp64 test_files/UnaryPlus.cs306.cfg -d  -tokens  > out2
 meld out1 out2
