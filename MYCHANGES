@@ -1,31 +1,28 @@
 110050039 Vivek Atulkar
 110050048 Sudipto Biswas
 
-Part-3b
-We added the following new grammar rules :
--arithmetic_expression
--term
--factor
+Part-4a
 
-Now modifications in files------------------
+Modified starting grammer :
+
+program:
+	declaration_statement_list 	prototype_list 	function_list
+;
+
+prototype:
+	variable_type NAME '(' variable_list ')' ';'
+;
+
+function_list is list of one or more functions and from then previos grammer is used.
+
+New production "function_call" is added : 
+function_call can considered as constant or a statement.
+
+function_call:
+	NAME '(' input_params_list ')'
+;
 
 In Scanner.ll :
-new tokens FLOAT , DOUBLE are introduced
+new token VOID is added.
 
-In Parser.yy :
--Grammer for arithmetic expression is added.
--new production/tags made:
---arithmetic_expression
---"typeCast" which can be '(' FLOAT ')' | '(' INTEGER ')' | '(' DOUBLE ')' | '-' 
-
-In ast.cc && ast.hh :
-New Class added:
--Arith_Expr_Ast
--Typecast_Expr_Ast
--Unary_Expr_Ast
-
-In local_environment.cc && local_environment.hh:
--new enum float_result is added
--new class added Eval_Result_Value_Float
-
-**setprecision function is used to set precision value of floats to 2 from iomanip library.
+And all actions in parser.yy and classes in ast files are commented.

@@ -621,12 +621,12 @@ constant:
 
 function_call:
 	NAME '(' input_params_list ')'
-
+|
+	NAME '('  ')'
 ;
 
 input_params_list:
 	input_params_list ',' relational_expression
 |
 	relational_expression
-|
 ;
