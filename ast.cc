@@ -86,6 +86,11 @@ Data_Type Name_Ast::get_data_type()
 	return variable_symbol_entry.get_data_type();
 }
 
+string Name_Ast::get_name()
+{
+	return variable_name;
+}
+
 void Name_Ast::print_ast(ostream & file_buffer)
 {
 	file_buffer << "Name : " << variable_name;
@@ -235,16 +240,26 @@ Eval_Result & Number_Ast<DATA_TYPE>::evaluate(Local_Environment & eval_env, ostr
 
 ///////////////////////////////////////////////////////////////////////////////
 
-Return_Ast::Return_Ast()
+Return_Ast::Return_Ast(Ast * temp_lhs)
 {
+	lhs=temp_lhs;
 }
 
 Return_Ast::~Return_Ast()
-{}
+{
+	delete lhs;
+}
 
 void Return_Ast::print_ast(ostream & file_buffer)
 {
-	file_buffer << AST_SPACE << "Return <NOTHING>\n";
+	if(lhs==NULL){
+		file_buffer << AST_SPACE << "RETURN <NOTHING>\n";	
+	}else{
+		file_buffer << AST_SPACE << "RETURN ";
+		lhs->print_ast(file_buffer);
+		file_buffer<<"\n";
+	}
+	
 }
 
 Eval_Result & Return_Ast::evaluate(Local_Environment & eval_env, ostream & file_buffer)
@@ -705,4 +720,58 @@ Eval_Result & Unary_Expr_Ast::evaluate(Local_Environment & eval_env, ostream & f
 		float_result.set_value( -1 * result_lhs.get_value() );
 		return float_result;
 	}
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////
+
+Fn_Call_Ast::Fn_Call_Ast(Procedure * temp_proc, list<Ast *> * ast_list)
+{
+	proc = temp_proc;
+	var_list  = ast_list;
+}
+
+Fn_Call_Ast::~Fn_Call_Ast()
+{
+	delete proc;
+	delete var_list;
+}
+
+Data_Type Fn_Call_Ast::get_data_type()
+{
+	return proc->get_return_type();
+}
+
+void Fn_Call_Ast::print_ast(ostream & file_buffer)
+{
+
+	file_buffer<< "\n" << AST_SPACE<<"FN CALL: ";
+	file_buffer<< proc->get_proc_name() <<"(\n";
+	while(var_list->size()){
+		file_buffer <<"\n";
+		file_buffer << AST_NODE_SPACE;
+		(var_list->front())->print_ast(file_buffer);
+		var_list->pop_front();
+	}
+	file_buffer << ")\n";
+}
+
+Eval_Result & Fn_Call_Ast::evaluate(Local_Environment & eval_env, ostream & file_buffer)
+{
+	// Eval_Result & result_lhs = lhs->evaluate(eval_env, file_buffer);
+
+	// Eval_Result & int_result = * new Eval_Result_Value_Int();
+	// Eval_Result & float_result = * new Eval_Result_Value_Float();
+
+	// if(lhs->get_data_type() == int_data_type){		
+	// 	// int_result.set_value( (int) (-1 * result_lhs.get_value()) );
+	// 	int_result.set_value(-1 * result_lhs.get_value());
+	// 	return int_result;
+	// }
+
+	// else if(lhs->get_data_type() == float_data_type)
+	// {
+	// 	float_result.set_value( -1 * result_lhs.get_value() );
+	// 	return float_result;
+	// }
 }

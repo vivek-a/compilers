@@ -65,6 +65,16 @@ void Procedure::set_local_list(Symbol_Table & new_list)
 	local_symbol_table.set_table_scope(local);
 }
 
+void Procedure::append_local_list(Symbol_Table & new_list)
+{
+	list<Symbol_Table_Entry *> list = new_list.get_symbol_table();
+	while (!list.empty())
+	{
+		local_symbol_table.push_symbol(list.front());
+		list.pop_front();
+	}
+}
+
 Data_Type Procedure::get_return_type()
 {
 	return return_type;
@@ -82,7 +92,7 @@ Symbol_Table_Entry & Procedure::get_symbol_table_entry(string variable_name)
 
 void Procedure::print_ast(ostream & file_buffer)
 {
-	file_buffer << PROC_SPACE << "Procedure: main" << "\n\n";
+	file_buffer << PROC_SPACE << "Procedure: "<< name << "\n\n";
 
 	list<Basic_Block *>::iterator i;
 	for(i = basic_block_list.begin(); i != basic_block_list.end(); i++)

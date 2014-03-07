@@ -35,6 +35,8 @@ using namespace std;
 //enum arith_ops {PLUS,MINUS,MULT,DIV};
 
 class Ast;
+#include "basic-block.hh"
+#include "procedure.hh"
 
 class Ast
 {
@@ -86,7 +88,7 @@ public:
 	Data_Type get_data_type();
 
 	void print_ast(ostream & file_buffer);
-
+	string get_name();
 	void print_value(Local_Environment & eval_env, ostream & file_buffer);
 	Eval_Result & get_value_of_evaluation(Local_Environment & eval_env);
 	void set_value_of_evaluation(Local_Environment & eval_env, Eval_Result & result);
@@ -111,9 +113,9 @@ public:
 
 class Return_Ast:public Ast
 {
-
+	Ast * lhs;
 public:
-	Return_Ast();
+	Return_Ast(Ast * temp_lhs);
 	~Return_Ast();
 
 	void print_ast(ostream & file_buffer);
@@ -212,5 +214,18 @@ public:
 
 	Eval_Result & evaluate(Local_Environment & eval_env, ostream & file_buffer);
 };
+
+class Fn_Call_Ast:public Ast
+{
+	Procedure * proc;
+	list<Ast *> * var_list;
+public:
+	Fn_Call_Ast(Procedure * temp_proc, list<Ast *> * ast_list);
+	~Fn_Call_Ast();
+	Data_Type get_data_type();
+	void print_ast(ostream & file_buffer);
+	Eval_Result & evaluate(Local_Environment & eval_env, ostream & file_buffer);
+};
+
 
 #endif

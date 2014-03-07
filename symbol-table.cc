@@ -92,6 +92,11 @@ Symbol_Table_Entry & Symbol_Table::get_symbol_table_entry(string variable_name)
 	report_error("variable symbol entry doesn't exist", NOLINE);
 }
 
+list<Symbol_Table_Entry *> Symbol_Table::get_symbol_table()
+{
+	return variable_table;
+}
+
 void Symbol_Table::create(Local_Environment & local_global_variables_table)
 {
 	list<Symbol_Table_Entry *>::iterator i;

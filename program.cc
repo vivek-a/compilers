@@ -91,12 +91,24 @@ Procedure * Program::get_main_procedure(ostream & file_buffer)
 	return NULL;
 }
 
+Procedure * Program::get_procedure(string proc_name)
+{
+	map<string, Procedure *>::iterator i;
+	for(i = procedure_map.begin(); i != procedure_map.end(); i++)
+	{
+		if (i->second != NULL && i->second->get_proc_name() == proc_name)
+				return i->second;
+	}
+	
+	return NULL;
+}
+
 void Program::print_ast()
 {
 	command_options.create_ast_buffer();
 	ostream & ast_buffer = command_options.get_ast_buffer();
 
-	ast_buffer << "Program:\n";
+	ast_buffer << procedure_map.size() <<"Program:\n";
 
 	Procedure * main = get_main_procedure(ast_buffer);
 	if (main == NULL)
@@ -106,6 +118,11 @@ void Program::print_ast()
 	{
 		main->print_ast(ast_buffer);
 	}
+
+	// map<string, Procedure *>::iterator i;
+	// for ( i = procedure_map.begin(); i != procedure_map.end(); i++)
+	// 	(i->second)->print_ast(ast_buffer);
+
 }
 
 Eval_Result & Program::evaluate()
