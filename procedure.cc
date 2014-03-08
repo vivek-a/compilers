@@ -40,6 +40,8 @@ Procedure::Procedure(Data_Type proc_return_type, string proc_name)
 {
 	return_type = proc_return_type;
 	name = proc_name;
+	// goto_list = new vector<int>;
+	// vector<int> goto_list;
 }
 
 Procedure::~Procedure()
@@ -47,6 +49,15 @@ Procedure::~Procedure()
 	list<Basic_Block *>::iterator i;
 	for (i = basic_block_list.begin(); i != basic_block_list.end(); i++)
 		delete (*i);
+}
+
+vector<int> Procedure::get_goto_list()
+{
+	return goto_list;
+}
+
+void Procedure::add_to_goto_list(int num){
+	(this->goto_list).push_back(num);
 }
 
 string Procedure::get_proc_name()
@@ -92,7 +103,7 @@ Symbol_Table_Entry & Procedure::get_symbol_table_entry(string variable_name)
 
 void Procedure::print_ast(ostream & file_buffer)
 {
-	file_buffer << PROC_SPACE << "Procedure: "<< name << "\n\n";
+	file_buffer << PROC_SPACE << "Procedure: "<< name << "\n";
 
 	list<Basic_Block *>::iterator i;
 	for(i = basic_block_list.begin(); i != basic_block_list.end(); i++)

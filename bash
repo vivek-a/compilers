@@ -19,7 +19,7 @@ do
 	f=`echo $file | cut -d '/' -f2`
 	f=`echo $f | cut -d '.' -f1`
 	./cfglp $file -tokens -ast  -d > out1
-	./cfglp64 $file -tokens -ast  -d > out2
+	./cfglp64 $file -tokens  -ast -d > out2
 	diff out1 out2 > tmp/$f
 done
 

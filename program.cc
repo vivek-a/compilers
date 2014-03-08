@@ -108,20 +108,24 @@ void Program::print_ast()
 	command_options.create_ast_buffer();
 	ostream & ast_buffer = command_options.get_ast_buffer();
 
-	ast_buffer << procedure_map.size() <<"Program:\n";
+	ast_buffer <<"Program:\n";
 
-	Procedure * main = get_main_procedure(ast_buffer);
+/*	Procedure * main = get_main_procedure(ast_buffer);
 	if (main == NULL)
 		report_error("No main function found in the program", NOLINE);
 
 	else
 	{
 		main->print_ast(ast_buffer);
-	}
+	}*/
 
-	// map<string, Procedure *>::iterator i;
-	// for ( i = procedure_map.begin(); i != procedure_map.end(); i++)
-	// 	(i->second)->print_ast(ast_buffer);
+	map<string, Procedure *>::iterator i;
+	for ( i = procedure_map.begin(); i != procedure_map.end(); i++)
+		{
+			// cout<<(i->first)<<endl;
+			(i->second)->print_ast(ast_buffer);
+			ast_buffer <<"\n";
+		}
 
 }
 

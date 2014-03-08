@@ -95,9 +95,9 @@ inline void Parser::bb_strictly_increasing_order_check(list<Basic_Block *> * bb_
 
 ////////////////// Parser bb_existence_check function ////////////////////////
 
-inline void Parser::bb_existence_check(list<Basic_Block *> * bb_list ,vector<int>* goto_list)
+inline void Parser::bb_existence_check(list<Basic_Block *> * bb_list ,vector<int> goto_list)
 {
-  vector<int> goto_blocks= *goto_list;
+  vector<int> goto_blocks= goto_list;
 
   int flag,num;
 

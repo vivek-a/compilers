@@ -60,11 +60,14 @@ list<Ast *> Basic_Block::get_bb_statement_list()
 
 void Basic_Block::print_bb(ostream & file_buffer)
 {
-	file_buffer << BB_SPACE << "Basic_Block " << id_number << "\n";
+	file_buffer << "\n";
+	file_buffer << BB_SPACE << "Basic_Block " << id_number ;
 
 	list<Ast *>::iterator i;
 	for(i = statement_list.begin(); i != statement_list.end(); i++)
 		(*i)->print_ast(file_buffer);
+
+	// file_buffer << "\n";
 
 	//cout<< "id number is : " << id_number << " : successor is : " << successor <<endl;
 	if(successor == false)
@@ -76,7 +79,7 @@ Eval_Result & Basic_Block::evaluate(Local_Environment & eval_env, ostream & file
 
 	Eval_Result * result = NULL;
 
-	file_buffer << "\n" << BB_SPACE << "Basic Block: " << id_number << "\n";
+	file_buffer  << BB_SPACE << "Basic Block: " << id_number << "\n";
 
 	list <Ast *>::iterator i;
 	

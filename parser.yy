@@ -81,7 +81,8 @@
 program:
 	declaration_statement_list
 	{
-		program_object.set_global_table(*$1);
+		if($1!=NULL)
+			program_object.set_global_table(*$1);
 	}
 
 	function_list
@@ -143,7 +144,8 @@ procedure_body:
 		// 	report_error("Atleast 1 basic block should have a return statement", line);
 		// }
 		current_procedure->set_basic_block_list(*$4);
-		bb_existence_check($4,goto_blocks);		
+		bb_existence_check($4,current_procedure->get_goto_list());		
+		// cout<<"yo1"<<endl;
 
 		delete $4;
 	}
@@ -153,8 +155,8 @@ procedure_body:
 	
 	{
 		current_procedure->set_basic_block_list(*$2);
-		bb_existence_check($2,goto_blocks);
-
+		bb_existence_check($2,current_procedure->get_goto_list());
+		// cout<<"yo2"<<endl;
 		delete $2;
 	}
 	
@@ -165,7 +167,7 @@ declaration_statement_list:
 	declaration_statement
 	{
 		int line = get_line_number();
-		program_object.variable_in_proc_map_check($1->get_variable_name(), line);
+		//program_object.variable_in_proc_map_check($1->get_variable_name(), line);
 
 		string var_name = $1->get_variable_name();
 		if (current_procedure && current_procedure->get_proc_name() == var_name)
@@ -182,7 +184,7 @@ declaration_statement_list:
 	
 	{
 		int line = get_line_number();
-		program_object.variable_in_proc_map_check($2->get_variable_name(), line);
+		//program_object.variable_in_proc_map_check($2->get_variable_name(), line);
 
 		string var_name = $2->get_variable_name();
 		if (current_procedure && current_procedure->get_proc_name() == var_name)
@@ -209,40 +211,41 @@ declaration_statement_list:
 
 	}
 |
-	declaration_statement_list prototype_list
+	declaration_statement_list prototype
 	{
 		$$ = $1;
+	}
+|
+	prototype
+	{
+		$$ = NULL;
 	}
 ;
 
 declaration_statement:
 	INTEGER NAME ';'
 	
-	{	//do we need to check for repetition again ????
+	{	
 		$$ = new Symbol_Table_Entry(*$2, int_data_type);
 		delete $2;
 	}
 |
 	FLOAT NAME ';'
 	
-	{	//do we need to check for repetition again ????
+	{	
 		$$ = new Symbol_Table_Entry(*$2, float_data_type);
 		delete $2;
 	}
 |
 	DOUBLE NAME ';'
 
-	{	//do we need to check for repetition again ????
+	{	
 		$$ = new Symbol_Table_Entry(*$2, float_data_type);
 		delete $2;
 	}	
+
 ;
 
-prototype_list:
-	prototype_list prototype
-|
-	prototype
-;
 
 prototype:
 	INTEGER NAME '(' varlist ')' ';' 
@@ -326,6 +329,7 @@ varlist:
 		
 		$$->push_symbol($1);
 	}
+
 ;
 
 var: 
@@ -526,7 +530,7 @@ go_to_statement:
 		//Check basic block number exist
 
 		$$ = new Goto_Ast( $2 );
-		goto_blocks->push_back($2);
+		current_procedure->add_to_goto_list($2);
 	}
 ;
 

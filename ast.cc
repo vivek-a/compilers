@@ -253,9 +253,9 @@ Return_Ast::~Return_Ast()
 void Return_Ast::print_ast(ostream & file_buffer)
 {
 	if(lhs==NULL){
-		file_buffer << AST_SPACE << "RETURN <NOTHING>\n";	
+		file_buffer<< "\n" << AST_SPACE << "RETURN <NOTHING>\n";	
 	}else{
-		file_buffer << AST_SPACE << "RETURN ";
+		file_buffer << "\n" << AST_SPACE << "RETURN ";
 		lhs->print_ast(file_buffer);
 		file_buffer<<"\n";
 	}
@@ -292,8 +292,8 @@ int Goto_Ast::get_number(){
 
 void Goto_Ast::print_ast(ostream & file_buffer)
 {
-	file_buffer << AST_SPACE << "Goto statement:\n";
-	file_buffer << AST_NODE_SPACE<< "Successor: " <<basic_block_number << "\n";
+	file_buffer <<"\n" << AST_SPACE << "Goto statement:\n";
+	file_buffer << AST_NODE_SPACE<< "Successor: " <<basic_block_number;
 }
 
 Eval_Result & Goto_Ast::evaluate(Local_Environment & eval_env, ostream & file_buffer)
@@ -323,11 +323,11 @@ If_Else_Loop_Ast::~If_Else_Loop_Ast()
 
 void If_Else_Loop_Ast::print_ast(ostream & file_buffer)
 {
-	file_buffer << AST_SPACE << "If_Else statement:";	
+	file_buffer << "\n" << AST_SPACE << "If_Else statement:";	
 	relational_ast->print_ast(file_buffer);	
 	file_buffer <<"\n";
 	file_buffer << AST_NODE_SPACE<<"True Successor: "<<if_ast->get_number()<<"\n";
-	file_buffer << AST_NODE_SPACE<<"False Successor: "<<else_ast->get_number()<<"\n";
+	file_buffer << AST_NODE_SPACE<<"False Successor: "<<else_ast->get_number();
 	
 	
 }
@@ -389,7 +389,7 @@ bool Assignment_Ast::check_ast(int line)
 
 void Assignment_Ast::print_ast(ostream & file_buffer)
 {
-	file_buffer << AST_SPACE << "Asgn:\n";
+	file_buffer <<"\n" << AST_SPACE << "Asgn:\n";
 
 	file_buffer << AST_NODE_SPACE<<"LHS (";
 	lhs->print_ast(file_buffer);
@@ -397,7 +397,7 @@ void Assignment_Ast::print_ast(ostream & file_buffer)
 
 	file_buffer << AST_NODE_SPACE << "RHS (";
 	rhs->print_ast(file_buffer);
-	file_buffer << ")\n";
+	file_buffer << ")";
 }
 
 Eval_Result & Assignment_Ast::evaluate(Local_Environment & eval_env, ostream & file_buffer)
@@ -449,7 +449,7 @@ Relational_Expr_Ast::~Relational_Expr_Ast()
 
 Data_Type Relational_Expr_Ast::get_data_type()
 {
-	return node_data_type;
+	return int_data_type;
 }
 
 bool Relational_Expr_Ast::check_ast(int line)
@@ -745,15 +745,26 @@ Data_Type Fn_Call_Ast::get_data_type()
 void Fn_Call_Ast::print_ast(ostream & file_buffer)
 {
 
-	file_buffer<< "\n" << AST_SPACE<<"FN CALL: ";
-	file_buffer<< proc->get_proc_name() <<"(\n";
-	while(var_list->size()){
-		file_buffer <<"\n";
-		file_buffer << AST_NODE_SPACE;
-		(var_list->front())->print_ast(file_buffer);
-		var_list->pop_front();
+	file_buffer << "\n" << AST_SPACE << "FN CALL: ";
+	file_buffer << proc->get_proc_name() <<"(";
+	
+	if(var_list!=NULL){
+		list<Ast *>::iterator i;
+		for (i = var_list->begin(); i != var_list->end(); i++)
+		{
+			file_buffer <<"\n";
+			file_buffer << AST_NODE_SPACE;
+			(*i)->print_ast(file_buffer);
+		}
 	}
-	file_buffer << ")\n";
+
+	// while(var_list->size()){
+	// 	file_buffer <<"\n";
+	// 	file_buffer << AST_NODE_SPACE;
+	// 	(var_list->front())->print_ast(file_buffer);
+	// 	var_list->pop_front();
+	// }
+	file_buffer << ")";
 }
 
 Eval_Result & Fn_Call_Ast::evaluate(Local_Environment & eval_env, ostream & file_buffer)

@@ -26,6 +26,7 @@
 
 #include<string>
 #include<map>
+#include<vector>
 #include<list>
 
 #define PROC_SPACE "   "
@@ -41,11 +42,15 @@ class Procedure
 	string name;
 	Symbol_Table local_symbol_table;
 	list<Basic_Block *> basic_block_list;
+	vector<int> goto_list;
 	
 
 public:
 	Procedure(Data_Type proc_return_type, string proc_name);
 	~Procedure();
+
+	vector<int> get_goto_list();
+	void add_to_goto_list(int num);
 
 	string get_proc_name();
 	void set_basic_block_list(list<Basic_Block *> bb_list);
