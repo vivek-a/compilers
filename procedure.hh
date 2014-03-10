@@ -41,13 +41,19 @@ class Procedure
 	Data_Type return_type;
 	string name;
 	Symbol_Table local_symbol_table;
+	Symbol_Table params_list;
 	list<Basic_Block *> basic_block_list;
 	vector<int> goto_list;
 	
 
 public:
+	int return_check;
+
 	Procedure(Data_Type proc_return_type, string proc_name);
 	~Procedure();
+
+	Symbol_Table get_params_list();
+	void set_params_list(Symbol_Table & params_list);
 
 	vector<int> get_goto_list();
 	void add_to_goto_list(int num);
@@ -64,7 +70,7 @@ public:
 	Basic_Block * get_next_bb(Basic_Block & current_bb);
 	Basic_Block & get_start_basic_block();
 
-	Eval_Result & evaluate(ostream & file_buffer);
+	Eval_Result & evaluate(ostream & file_buffer,list<Eval_Result_Value *>);
 
 	bool variable_in_symbol_list_check(string variable);
 };

@@ -114,8 +114,9 @@ public:
 class Return_Ast:public Ast
 {
 	Ast * lhs;
+	Procedure * proc;
 public:
-	Return_Ast(Ast * temp_lhs);
+	Return_Ast(Ast * temp_lhs,Procedure * proc);
 	~Return_Ast();
 
 	void print_ast(ostream & file_buffer);

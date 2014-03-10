@@ -140,13 +140,15 @@ Eval_Result & Program::evaluate()
 	command_options.create_output_buffer();
 	ostream & file_buffer = command_options.get_output_buffer();
 	file_buffer << "Evaluating Program\n";
-	file_buffer << GLOB_SPACE << "Global Variables (before evaluating):\n";
+	file_buffer << GLOB_SPACE << "Global Variables (before evaluating):";
 	interpreter_global_table.print(file_buffer);
+	file_buffer<<endl;
 
-	Eval_Result & result = main->evaluate(file_buffer);
+	Eval_Result & result = main->evaluate(file_buffer,*new list<Eval_Result_Value *>());
 
-	file_buffer << GLOB_SPACE << "Global Variables (after evaluating):\n";
+	file_buffer<<endl << GLOB_SPACE << "Global Variables (after evaluating):";
 	interpreter_global_table.print(file_buffer);
+	file_buffer<<endl;
 
 	return result;
 }

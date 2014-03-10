@@ -79,7 +79,7 @@ Eval_Result & Basic_Block::evaluate(Local_Environment & eval_env, ostream & file
 
 	Eval_Result * result = NULL;
 
-	file_buffer  << BB_SPACE << "Basic Block: " << id_number << "\n";
+	file_buffer << "\n\n" << BB_SPACE << "Basic Block: " << id_number;
 
 	list <Ast *>::iterator i;
 	

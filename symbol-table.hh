@@ -64,7 +64,7 @@ public:
 
 	void create(Local_Environment & local_global_variables_table);
 
-	list<Symbol_Table_Entry *> get_symbol_table();
+	list<Symbol_Table_Entry *> & get_symbol_table();
 };
 
 class Symbol_Table_Entry

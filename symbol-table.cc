@@ -92,7 +92,7 @@ Symbol_Table_Entry & Symbol_Table::get_symbol_table_entry(string variable_name)
 	report_error("variable symbol entry doesn't exist", NOLINE);
 }
 
-list<Symbol_Table_Entry *> Symbol_Table::get_symbol_table()
+list<Symbol_Table_Entry *> & Symbol_Table::get_symbol_table()
 {
 	return variable_table;
 }

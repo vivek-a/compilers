@@ -173,24 +173,29 @@ void Local_Environment::print(ostream & file_buffer)
 	for (i = variable_table.begin(); i != variable_table.end(); i++)
 	{
 		Eval_Result_Value * vi = variable_table[(*i).first];
+	
+
 		if (vi != NULL)
 		{
+			file_buffer<<endl;
+			
 			if (vi->is_variable_defined() == false)
 			{				
-				file_buffer << VAR_SPACE << (*i).first << " : undefined" << "\n";
+				file_buffer << VAR_SPACE << (*i).first << " : undefined";
 			}
 		
 			else
 			{
 				if(vi->get_result_enum()==float_result){
-					file_buffer << VAR_SPACE << (*i).first << " : " <<fixed<<setprecision(2)<< vi->get_value() << "\n";
+					file_buffer << VAR_SPACE << (*i).first << " : " <<fixed<<setprecision(2)<< vi->get_value();
 				}
 				else if(vi->get_result_enum()==int_result){
-					file_buffer << VAR_SPACE << (*i).first << " : " <<fixed<<setprecision(0)<<vi->get_value() << "\n";
+					file_buffer << VAR_SPACE << (*i).first << " : " <<fixed<<setprecision(0)<<vi->get_value();
 				}
 			}
 		}
 	}
+
 }
 
 bool Local_Environment::is_variable_defined(string name)

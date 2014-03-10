@@ -116,6 +116,9 @@ procedure_name:
 	{
 		if(*$1 == "main"){
 			new_procedure = new Procedure(void_data_type, *$1);
+			new_procedure->set_local_list(*new Symbol_Table());
+			new_procedure->set_params_list(*new Symbol_Table());
+
 			program_object.set_procedure_map(*new_procedure);
 			current_procedure= new_procedure;
 			// cout<<current_procedure->get_proc_name()<<endl;
@@ -132,6 +135,7 @@ procedure_body:
 	
 	{
 		current_procedure->append_local_list(*$2);
+
 		delete $2;
 	}
 
@@ -252,6 +256,7 @@ prototype:
 	{
 		new_procedure = new Procedure(int_data_type, *$2);
 		new_procedure->set_local_list(*$4);
+		new_procedure->set_params_list(*$4);
 		program_object.set_procedure_map(*new_procedure);
 		// cout<<"-------------1"<<endl;
 	}
@@ -260,6 +265,7 @@ prototype:
 	{
 		new_procedure = new Procedure(int_data_type, *$2);
 		new_procedure->set_local_list(*new Symbol_Table());
+		new_procedure->set_params_list(*new Symbol_Table());
 		program_object.set_procedure_map(*new_procedure);
 		// cout<<"-------------2"<<endl;		
 	}
@@ -268,6 +274,7 @@ prototype:
 	{
 		new_procedure = new Procedure(float_data_type, *$2);
 		new_procedure->set_local_list(*$4);
+		new_procedure->set_params_list(*$4);
 		program_object.set_procedure_map(*new_procedure);
 		// cout<<"-------------3"<<endl;
 	}
@@ -276,6 +283,7 @@ prototype:
 	{
 		new_procedure = new Procedure(float_data_type, *$2);
 		new_procedure->set_local_list(*new Symbol_Table());
+		new_procedure->set_params_list(*new Symbol_Table());
 		program_object.set_procedure_map(*new_procedure);
 		// cout<<"-------------4"<<endl;
 	}
@@ -284,6 +292,7 @@ prototype:
 	{
 		new_procedure = new Procedure(float_data_type, *$2);
 		new_procedure->set_local_list(*$4);
+		new_procedure->set_params_list(*$4);
 		program_object.set_procedure_map(*new_procedure);
 		// cout<<"-------------5"<<endl;
 	}
@@ -292,6 +301,7 @@ prototype:
 	{
 		new_procedure = new Procedure(float_data_type, *$2);
 		new_procedure->set_local_list(*new Symbol_Table());
+		new_procedure->set_params_list(*new Symbol_Table());
 		program_object.set_procedure_map(*new_procedure);
 		// cout<<"-------------6"<<endl;
 	}
@@ -300,6 +310,7 @@ prototype:
 	{
 		new_procedure = new Procedure(void_data_type, *$2);
 		new_procedure->set_local_list(*$4);
+		new_procedure->set_params_list(*$4);
 		program_object.set_procedure_map(*new_procedure);
 		// cout<<"-------------1"<<endl;
 	}
@@ -308,6 +319,7 @@ prototype:
 	{
 		new_procedure = new Procedure(void_data_type, *$2);
 		new_procedure->set_local_list(*new Symbol_Table());
+		new_procedure->set_params_list(*new Symbol_Table());
 		program_object.set_procedure_map(*new_procedure);
 		// cout<<"-------------1"<<endl;
 	}
@@ -433,7 +445,7 @@ executable_statement_list:
 |
 	assignments_statement_list  RETURN  relational_expression ';'
 	{
-		Ast * ret = new Return_Ast($3);
+		Ast * ret = new Return_Ast($3,current_procedure);
 
 		if ($1 != NULL)
 			$$ = $1;
@@ -451,7 +463,7 @@ executable_statement_list:
 |
 	assignments_statement_list  RETURN  ';'
 	{
-		Ast * ret = new Return_Ast(NULL);
+		Ast * ret = new Return_Ast(NULL,current_procedure);
 
 		if ($1 != NULL)
 			$$ = $1;

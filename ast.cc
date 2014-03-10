@@ -138,7 +138,7 @@ void Name_Ast::print_value(Local_Environment & eval_env, ostream & file_buffer)
 		else
 			report_internal_error("Result type can only be int and float");
 	}
-	file_buffer << "\n";
+	// file_buffer << "\n";
 }
 
 Eval_Result & Name_Ast::get_value_of_evaluation(Local_Environment & eval_env)
@@ -240,35 +240,46 @@ Eval_Result & Number_Ast<DATA_TYPE>::evaluate(Local_Environment & eval_env, ostr
 
 ///////////////////////////////////////////////////////////////////////////////
 
-Return_Ast::Return_Ast(Ast * temp_lhs)
+Return_Ast::Return_Ast(Ast * temp_lhs,Procedure * proc)
 {
-	lhs=temp_lhs;
+	this->lhs=temp_lhs;
+	this->proc=proc;
 }
 
 Return_Ast::~Return_Ast()
 {
 	delete lhs;
+	delete proc;
 }
 
 void Return_Ast::print_ast(ostream & file_buffer)
 {
 	if(lhs==NULL){
-		file_buffer<< "\n" << AST_SPACE << "RETURN <NOTHING>\n";	
+		// if(proc->get_proc_name()=="main")file_buffer<<endl;
+		file_buffer<<endl<<AST_SPACE << "RETURN <NOTHING>";
 	}else{
-		file_buffer << "\n" << AST_SPACE << "RETURN ";
+		// if(proc->get_proc_name()!="main")file_buffer<<endl;
+		file_buffer<<endl<< AST_SPACE << "RETURN ";
 		lhs->print_ast(file_buffer);
-		file_buffer<<"\n";
+		// file_buffer<<"\n";
 	}
+	file_buffer<<endl<<endl;
 	
 }
 
 Eval_Result & Return_Ast::evaluate(Local_Environment & eval_env, ostream & file_buffer)
 {
-	
 	print_ast(file_buffer);
-	Eval_Result & result = *new Eval_Result_Value_Int();
-	result.set_value(-1);
-	return result;
+	proc->return_check=1;
+	if(lhs==NULL){
+		Eval_Result & result = *new Eval_Result_Value_Int();
+		// result.set_value(-1);
+		return result;
+	}
+	else{ 
+		return lhs->evaluate(eval_env,file_buffer);	
+	}
+	
 }
 
 template class Number_Ast<int>;
@@ -299,7 +310,7 @@ void Goto_Ast::print_ast(ostream & file_buffer)
 Eval_Result & Goto_Ast::evaluate(Local_Environment & eval_env, ostream & file_buffer)
 {
 	print_ast(file_buffer);
-	file_buffer << AST_SPACE << "GOTO (BB "<<basic_block_number<<")\n";
+	file_buffer << "\n"<<AST_SPACE << "GOTO (BB "<<basic_block_number<<")";
 	Eval_Result & result = * new Eval_Result_Value_Int();
 	// result.set_value( (int) basic_block_number);
 	result.set_value( basic_block_number);
@@ -335,21 +346,26 @@ void If_Else_Loop_Ast::print_ast(ostream & file_buffer)
 Eval_Result & If_Else_Loop_Ast::evaluate(Local_Environment & eval_env, ostream & file_buffer)
 {
 
-	print_ast(file_buffer);
+	file_buffer << "\n" << AST_SPACE << "If_Else statement:";	
+	relational_ast->print_ast(file_buffer);	
 
 	Eval_Result & result = * new Eval_Result_Value_Int();	
 	
 
 	Eval_Result & eval_relation = relational_ast->evaluate(eval_env, file_buffer);
 
+	file_buffer <<"\n";
+	file_buffer << AST_NODE_SPACE<<"True Successor: "<<if_ast->get_number()<<"\n";
+	file_buffer << AST_NODE_SPACE<<"False Successor: "<<else_ast->get_number();
+
 	if(eval_relation.get_value()){
-		file_buffer << AST_SPACE << "Condition True : Goto (BB "<< if_ast->get_number() <<")\n";
+		file_buffer << "\n"<<AST_SPACE << "Condition True : Goto (BB "<< if_ast->get_number() <<")";
 		//if_ast->print_value(eval_env, file_buffer);
 		result.set_value(if_ast->get_number());
 		return result;
 	}
 	else{
-		file_buffer<< AST_SPACE << "Condition False : Goto (BB "<< else_ast->get_number() <<")\n";
+		file_buffer<< "\n"<<AST_SPACE << "Condition False : Goto (BB "<< else_ast->get_number() <<")";
 		//else_ast->print_value(eval_env, file_buffer);
 		result.set_value(else_ast->get_number());
 		return result;
@@ -425,7 +441,11 @@ Eval_Result & Assignment_Ast::evaluate(Local_Environment & eval_env, ostream & f
 
 	print_ast(file_buffer);
 
+	file_buffer << "\n";
+
 	lhs->print_value(eval_env, file_buffer);
+
+	// file_buffer << "\n";
 
 
 	final.set_value(0);
@@ -474,11 +494,11 @@ void Relational_Expr_Ast::print_ast(ostream & file_buffer)
 
 	file_buffer << AST_NODE_SPACE << "   LHS (";
 	lhs->print_ast(file_buffer);
-	file_buffer << ")\n";
+	file_buffer << ")";
 
 	if(rhs!=NULL)
 	{
-		file_buffer << AST_NODE_SPACE << "   RHS (";
+		file_buffer<<"\n"<< AST_NODE_SPACE << "   RHS (";
 		rhs->print_ast(file_buffer);
 		file_buffer << ")";
 	}
@@ -564,11 +584,11 @@ void Arith_Expr_Ast::print_ast(ostream & file_buffer)
 
 	file_buffer << AST_NODE_SPACE << "   LHS (";
 	lhs->print_ast(file_buffer);
-	file_buffer << ")\n";
+	file_buffer << ")";
 
 	if(rhs!=NULL)
 	{
-		file_buffer << AST_NODE_SPACE << "   RHS (";
+		file_buffer<<"\n" << AST_NODE_SPACE << "   RHS (";
 		rhs->print_ast(file_buffer);
 		file_buffer << ")";
 	}
@@ -728,7 +748,8 @@ Eval_Result & Unary_Expr_Ast::evaluate(Local_Environment & eval_env, ostream & f
 Fn_Call_Ast::Fn_Call_Ast(Procedure * temp_proc, list<Ast *> * ast_list)
 {
 	proc = temp_proc;
-	var_list  = ast_list;
+	if(ast_list==NULL) var_list = new list<Ast *>;
+	else var_list  = ast_list;
 }
 
 Fn_Call_Ast::~Fn_Call_Ast()
@@ -758,31 +779,37 @@ void Fn_Call_Ast::print_ast(ostream & file_buffer)
 		}
 	}
 
-	// while(var_list->size()){
-	// 	file_buffer <<"\n";
-	// 	file_buffer << AST_NODE_SPACE;
-	// 	(var_list->front())->print_ast(file_buffer);
-	// 	var_list->pop_front();
-	// }
 	file_buffer << ")";
 }
 
 Eval_Result & Fn_Call_Ast::evaluate(Local_Environment & eval_env, ostream & file_buffer)
 {
-	// Eval_Result & result_lhs = lhs->evaluate(eval_env, file_buffer);
+	// cout<<"Size of var_list : "<<(var_list->get_symbol_table())->size()<<"  Size of params list : "<<((proc->get_params_list())->get_symbol_table()).size()<<endl;
 
-	// Eval_Result & int_result = * new Eval_Result_Value_Int();
-	// Eval_Result & float_result = * new Eval_Result_Value_Float();
+	list<Eval_Result_Value *> eval_result_list;
 
-	// if(lhs->get_data_type() == int_data_type){		
-	// 	// int_result.set_value( (int) (-1 * result_lhs.get_value()) );
-	// 	int_result.set_value(-1 * result_lhs.get_value());
-	// 	return int_result;
-	// }
+	list<Ast *>::iterator j;
+   	for ( j = var_list->begin(); j != var_list->end();j++)
+   	{
+   		Eval_Result & r = ((*j)->evaluate(eval_env, file_buffer));
 
-	// else if(lhs->get_data_type() == float_data_type)
-	// {
-	// 	float_result.set_value( -1 * result_lhs.get_value() );
-	// 	return float_result;
-	// }
+		if(r.get_result_enum()==int_result)
+		{
+			Eval_Result_Value_Int * j = new Eval_Result_Value_Int();
+			j->set_value(r.get_value());
+			j->set_variable_status(true);
+			eval_result_list.push_back(j);
+		}
+		else if(r.get_result_enum()==float_result)
+		{
+			Eval_Result_Value_Float * j = new Eval_Result_Value_Float();
+			j->set_value(r.get_value());
+			j->set_variable_status(true);
+			eval_result_list.push_back(j);
+		}
+   	}
+
+	Eval_Result & result = proc->evaluate(file_buffer,eval_result_list);
+
+	return result;
 }
