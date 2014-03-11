@@ -81,13 +81,20 @@
 program:
 	declaration_statement_list
 	{
-		if($1!=NULL)
+		if($1!=NULL){
 			program_object.set_global_table(*$1);
+		}
 	}
 
 	function_list
+	{	
+		
+	}
 |
 	function_list
+	{
+		
+	}
 ;
 
 
@@ -106,26 +113,64 @@ function:
 procedure_name:
 	NAME '(' varlist ')'
 	{
+		int line = get_line_number();
 
-		current_procedure = program_object.get_procedure(*$1);
-		// cout<<current_procedure->get_proc_name()<<endl;
-		//check all params
+		if(program_object.get_procedure(*$1) == NULL)
+		{
+			
+			report_error("Procedure corresponding to the name is not found",line);	
+		}	
+
+		
+
+		if(!program_object.check_if_prototype_exist($1,$3,line))
+		{
+			current_procedure = program_object.get_procedure(*$1);
+		}
+		else
+		{
+			
+		 	report_error("Last return statement type, of procedure, and its prototype should match",line);
+		}
+
+		
+
+		if(program_object.variable_in_symbol_list_check(*$1))
+		{
+			
+			report_error(" Procedure name cannot be same as global variable",line);	
+		}
 	}
 |
 	NAME '('  ')'
 	{
-		if(*$1 == "main"){
+		int line = get_line_number();
+
+		if(*$1 == "main")
+		{
 			new_procedure = new Procedure(void_data_type, *$1);
 			new_procedure->set_local_list(*new Symbol_Table());
 			new_procedure->set_params_list(*new Symbol_Table());
 
 			program_object.set_procedure_map(*new_procedure);
 			current_procedure= new_procedure;
-			// cout<<current_procedure->get_proc_name()<<endl;
 		}
-		else{
-			current_procedure = program_object.get_procedure(*$1);	
-			// cout<<current_procedure->get_proc_name()<<endl;
+		else
+		{
+			if(program_object.get_procedure(*$1) == NULL)
+			{
+				
+				report_error("Procedure corresponding to the name is not found",line);	
+			}	
+
+			if(!program_object.check_if_prototype_exist($1,NULL,line))
+			{
+				current_procedure = program_object.get_procedure(*$1);
+			}
+			else
+			{			
+			 	report_error("Last return statement type, of procedure, and its prototype should match",line);
+			}
 		}
 	}
 ;
@@ -141,16 +186,8 @@ procedure_body:
 
 	basic_block_list '}'
 	{
-		//return_statement_used_flag == false;
-		// if (return_statement_used_flag == false)
-		// {
-		// 	int line = get_line_number();
-		// 	report_error("Atleast 1 basic block should have a return statement", line);
-		// }
 		current_procedure->set_basic_block_list(*$4);
 		bb_existence_check($4,current_procedure->get_goto_list());		
-		// cout<<"yo1"<<endl;
-
 		delete $4;
 	}
 	
@@ -160,7 +197,6 @@ procedure_body:
 	{
 		current_procedure->set_basic_block_list(*$2);
 		bb_existence_check($2,current_procedure->get_goto_list());
-		// cout<<"yo2"<<endl;
 		delete $2;
 	}
 	
@@ -171,7 +207,6 @@ declaration_statement_list:
 	declaration_statement
 	{
 		int line = get_line_number();
-		//program_object.variable_in_proc_map_check($1->get_variable_name(), line);
 
 		string var_name = $1->get_variable_name();
 		if (current_procedure && current_procedure->get_proc_name() == var_name)
@@ -179,9 +214,12 @@ declaration_statement_list:
 			int line = get_line_number();
 			report_error("Variable name cannot be same as procedure name", line);
 		}
+
+
 		$$ = new Symbol_Table();
 
 		$$->push_symbol($1);
+
 	}
 |
 	declaration_statement_list declaration_statement
@@ -212,7 +250,6 @@ declaration_statement_list:
 			$$ = new Symbol_Table();
 
 		$$->push_symbol($2);
-
 	}
 |
 	declaration_statement_list prototype
@@ -254,74 +291,122 @@ declaration_statement:
 prototype:
 	INTEGER NAME '(' varlist ')' ';' 
 	{
+		if(program_object.get_procedure(*$2) != NULL)
+		{
+			int line = get_line_number();
+			report_error(" Overloading of the procedure is not allowed",line);	
+		}
+
+
+
 		new_procedure = new Procedure(int_data_type, *$2);
 		new_procedure->set_local_list(*$4);
 		new_procedure->set_params_list(*$4);
 		program_object.set_procedure_map(*new_procedure);
-		// cout<<"-------------1"<<endl;
 	}
 |
 	INTEGER NAME '(' ')'  ';'
 	{
+		if(program_object.get_procedure(*$2) != NULL)
+		{
+			int line = get_line_number();
+			report_error(" Overloading of the procedure is not allowed",line);	
+		}
+
 		new_procedure = new Procedure(int_data_type, *$2);
 		new_procedure->set_local_list(*new Symbol_Table());
 		new_procedure->set_params_list(*new Symbol_Table());
 		program_object.set_procedure_map(*new_procedure);
-		// cout<<"-------------2"<<endl;		
 	}
 |
 	FLOAT NAME '(' varlist ')' ';'
 	{
+
+		if(program_object.get_procedure(*$2) != NULL)
+		{
+			int line = get_line_number();
+			report_error(" Overloading of the procedure is not allowed",line);	
+		}
+
 		new_procedure = new Procedure(float_data_type, *$2);
 		new_procedure->set_local_list(*$4);
 		new_procedure->set_params_list(*$4);
 		program_object.set_procedure_map(*new_procedure);
-		// cout<<"-------------3"<<endl;
 	}
 |
 	FLOAT NAME '(' ')'  ';'
 	{
+
+		if(program_object.get_procedure(*$2) != NULL)
+		{
+			int line = get_line_number();
+			report_error(" Overloading of the procedure is not allowed",line);	
+		}
+
 		new_procedure = new Procedure(float_data_type, *$2);
 		new_procedure->set_local_list(*new Symbol_Table());
 		new_procedure->set_params_list(*new Symbol_Table());
 		program_object.set_procedure_map(*new_procedure);
-		// cout<<"-------------4"<<endl;
 	}
 |
 	DOUBLE NAME '(' varlist ')' ';'
 	{
+
+		if(program_object.get_procedure(*$2) != NULL)
+		{
+			int line = get_line_number();
+			report_error(" Overloading of the procedure is not allowed",line);	
+		}
+
 		new_procedure = new Procedure(float_data_type, *$2);
 		new_procedure->set_local_list(*$4);
 		new_procedure->set_params_list(*$4);
 		program_object.set_procedure_map(*new_procedure);
-		// cout<<"-------------5"<<endl;
 	}
 |
 	DOUBLE NAME '(' ')'  ';'
 	{
+
+		if(program_object.get_procedure(*$2) != NULL)
+		{
+			int line = get_line_number();
+			report_error(" Overloading of the procedure is not allowed",line);	
+		}
+
 		new_procedure = new Procedure(float_data_type, *$2);
 		new_procedure->set_local_list(*new Symbol_Table());
 		new_procedure->set_params_list(*new Symbol_Table());
 		program_object.set_procedure_map(*new_procedure);
-		// cout<<"-------------6"<<endl;
 	}
 |
 	VOID NAME '(' varlist ')' ';'
 	{
+
+		if(program_object.get_procedure(*$2) != NULL)
+		{
+			int line = get_line_number();
+			report_error(" Overloading of the procedure is not allowed",line);	
+		}
+
 		new_procedure = new Procedure(void_data_type, *$2);
 		new_procedure->set_local_list(*$4);
 		new_procedure->set_params_list(*$4);
 		program_object.set_procedure_map(*new_procedure);
-		// cout<<"-------------1"<<endl;
 	}
 |
 	VOID NAME '(' ')'  ';'
 	{
+
+		if(program_object.get_procedure(*$2) != NULL)
+		{
+			int line = get_line_number();
+			report_error(" Overloading of the procedure is not allowed",line);	
+		}
+
 		new_procedure = new Procedure(void_data_type, *$2);
 		new_procedure->set_local_list(*new Symbol_Table());
 		new_procedure->set_params_list(*new Symbol_Table());
 		program_object.set_procedure_map(*new_procedure);
-		// cout<<"-------------1"<<endl;
 	}
 ;
 
@@ -415,8 +500,6 @@ basic_block:
 			$$ = new Basic_Block($1, *ast_list,successor);
 		}
 
-		//cout<<"successor : " <<successor << " : bb num :" << $1 <<endl;
-
 		delete $3;		
 	 }
 	
@@ -454,11 +537,6 @@ executable_statement_list:
 
 		$$->push_back(ret);
 		successor=true;
-
-		// if( current_procedure->get_return_type() != $3->get_data_type){
-		// 	int line = get_line_number();
-		// 	report_error("return type not matching prototype return type", line);
-		// }
 	}
 |
 	assignments_statement_list  RETURN  ';'
@@ -736,11 +814,21 @@ function_call:
 	NAME '(' input_params_list ')'
 	{
 		$$ = new Fn_Call_Ast(program_object.get_procedure(*$1),$3);
+		if(  (((program_object.get_procedure(*$1))->get_params_list()).get_symbol_table()).size() != $3->size()  )		
+		{
+			int line = get_line_number();
+			report_error(" Actual and formal parameter count do not match",line);
+		}
 	}
 |
 	NAME '('  ')'
 	{
 		$$ = new Fn_Call_Ast(program_object.get_procedure(*$1),NULL);
+		if(  (((program_object.get_procedure(*$1))->get_params_list()).get_symbol_table()).size() != 0  )		
+		{
+			int line = get_line_number();
+			report_error(" Actual and formal parameter count do not match",line);
+		}
 	}
 ;
 

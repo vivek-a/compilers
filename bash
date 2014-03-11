@@ -20,7 +20,7 @@ do
 	f=`echo $f | cut -d '.' -f1`
 	./cfglp $file  -eval -d > out1
 	./cfglp64 $file -eval -d > out2
-	diff out1 out2 > tmp/$f
+	diff out1 out2 -bB > tmp/$f
 done
 
 # echo "\n\nProcessing error files"
@@ -36,3 +36,5 @@ done
 # 	diff out1 out2 > tmp/$f
 # 	echo "-------------------------------------------"
 # done
+
+ls -l tmp

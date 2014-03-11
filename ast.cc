@@ -272,6 +272,7 @@ Eval_Result & Return_Ast::evaluate(Local_Environment & eval_env, ostream & file_
 	print_ast(file_buffer);
 	proc->return_check=1;
 	if(lhs==NULL){
+
 		Eval_Result & result = *new Eval_Result_Value_Int();
 		// result.set_value(-1);
 		return result;
@@ -810,6 +811,6 @@ Eval_Result & Fn_Call_Ast::evaluate(Local_Environment & eval_env, ostream & file
    	}
 
 	Eval_Result & result = proc->evaluate(file_buffer,eval_result_list);
-
+	proc->return_check=0;
 	return result;
 }

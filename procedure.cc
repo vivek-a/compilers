@@ -41,6 +41,7 @@ Procedure::Procedure(Data_Type proc_return_type, string proc_name)
 {
 	return_type = proc_return_type;
 	name = proc_name;
+	return_check=0;
 }
 
 Procedure::~Procedure()
@@ -165,6 +166,7 @@ Eval_Result & Procedure::evaluate(ostream & file_buffer,list<Eval_Result_Value *
 		eval_env.put_variable_value( *(*j), (*i)->get_variable_name());
 		i++;
 	}
+
 	Eval_Result * result = NULL;
 
 	file_buffer<< PROC_SPACE << "Evaluating Procedure " << "<< "<<name<<" >>" << "\n";
@@ -176,34 +178,48 @@ Eval_Result & Procedure::evaluate(ostream & file_buffer,list<Eval_Result_Value *
 	while (current_bb)
 	{
 		result = &(current_bb->evaluate(eval_env, file_buffer));
-
-		if(result->get_value() == 0)
-			current_bb = get_next_bb(*current_bb);
-		else if(return_check == 1)
-			current_bb = NULL;
-		else 				
-			for(list<Basic_Block *>::iterator i = basic_block_list.begin(); i != basic_block_list.end(); i++)
-			{
-				if( (*i)->get_bb_number() == result->get_value())
-					current_bb = *i;		
+		if(return_check == 1)current_bb = NULL;
+		else
+		{
+			if(result->get_value() == 0)
+				current_bb = get_next_bb(*current_bb);
+			else{				
+				for(list<Basic_Block *>::iterator i = basic_block_list.begin(); i != basic_block_list.end(); i++)
+				{
+					if( (*i)->get_bb_number() == result->get_value())
+						current_bb = *i;		
+				}
 			}
-		
-			
+		}	
 	}
 
-	file_buffer<< endl << LOC_VAR_SPACE << "Local Variables (after evaluating) Function: << "<<name<<" >>";
-	eval_env.print(file_buffer);
+	// Eval_Result_Value put_result = *result;
+	// put_result.set_value(result->get_value());
+
+	file_buffer<< endl << LOC_VAR_SPACE << "Local Variables (after evaluating) Function: << "<<name<<" >>";	
 
 	// cout<<"return : "<<this->get_return_type()<<endl;
 
 	if( result->get_result_enum() == int_result && result->is_variable_defined() )
 	{
-		cout<<endl<<LOC_VAR_SPACE<<"   return : "<< fixed <<setprecision(0)<<result->get_value()<<endl;
+		// cout<<endl<<LOC_VAR_SPACE<<"   return : "<< fixed <<setprecision(0)<<result->get_value()<<endl;
+		Eval_Result_Value * put_result =  new Eval_Result_Value_Int();
+		put_result->set_value(result->get_value());
+		put_result->set_variable_status(true);
+		eval_env.put_variable_value( *put_result , "return" );
 	}
 	else if(result->get_result_enum()  == float_result &&  result->is_variable_defined() )
 	{
-		cout<<endl<<LOC_VAR_SPACE<<"   return : "<< fixed <<setprecision(2)<<result->get_value()<<endl;
+		// cout<<endl<<LOC_VAR_SPACE<<"   return : "<< fixed <<setprecision(2)<<result->get_value()<<endl;
+		Eval_Result_Value * put_result =  new Eval_Result_Value_Float();
+		put_result->set_variable_status(true);
+		put_result->set_value(result->get_value());
+		eval_env.put_variable_value( *put_result , "return" );
 	}
+
+	eval_env.print(file_buffer);
+
+	if(this->get_proc_name() != "main")file_buffer<<endl;
 
 	return *result;
 }

@@ -74,7 +74,9 @@ bool Symbol_Table::variable_in_symbol_list_check(string variable)
 	for (i = variable_table.begin(); i != variable_table.end(); i++)
 	{
 		if ((*i)->get_variable_name() == variable)
+		{
 			return true;
+		}
 	}
 
 	return false;

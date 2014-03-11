@@ -40,7 +40,8 @@ Program program_object;
 Local_Environment interpreter_global_table;
 
 Program::Program()
-{}
+{
+}
 
 Program::~Program()
 {}
@@ -50,6 +51,41 @@ void Program::delete_all()
 	map<string, Procedure *>::iterator i;
 	for (i = procedure_map.begin(); i != procedure_map.end(); i++)
 		delete i->second;
+}
+
+// bool Program::func_and_variable_name_check()
+// {
+
+// }
+
+bool Program::check_if_prototype_exist(string * proc,Symbol_Table * sym_table,int line){
+
+	//check_if_prototype_exist
+
+	map<string, Procedure *>::iterator i;
+	for (i = procedure_map.begin(); i != procedure_map.end(); i++)
+	{
+		if(*proc == i->first)
+		{	
+			if(sym_table != NULL){
+				Procedure * proc = get_procedure(i->first);
+
+				list<Symbol_Table_Entry *>::iterator i;
+				list<Symbol_Table_Entry *>::iterator j;
+
+				list<Symbol_Table_Entry *> v1 = sym_table->get_symbol_table();
+				list<Symbol_Table_Entry *> v2 = (proc->get_params_list()).get_symbol_table();						
+
+				for (i = v1.begin(),j = v2.begin(); i != v1.end(); i++,j++)
+				{
+					if( (*i)->get_variable_name() != (*j)->get_variable_name() || (*i)->get_data_type() != (*j)->get_data_type())
+						return true;
+				}		
+			}	
+		}
+	}
+
+	return false;	
 }
 
 void Program::set_global_table(Symbol_Table & new_global_table)
@@ -69,7 +105,7 @@ bool Program::variable_in_symbol_list_check(string variable)
 }
 
 Symbol_Table_Entry & Program::get_symbol_table_entry(string variable_name)
-{
+{	
 	return global_symbol_table.get_symbol_table_entry(variable_name);
 }
 
@@ -122,7 +158,6 @@ void Program::print_ast()
 	map<string, Procedure *>::iterator i;
 	for ( i = procedure_map.begin(); i != procedure_map.end(); i++)
 		{
-			// cout<<(i->first)<<endl;
 			(i->second)->print_ast(ast_buffer);
 			ast_buffer <<"\n";
 		}
