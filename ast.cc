@@ -791,21 +791,25 @@ Eval_Result & Fn_Call_Ast::evaluate(Local_Environment & eval_env, ostream & file
 
 	list<Ast *>::iterator j;
    	for ( j = var_list->begin(); j != var_list->end();j++)
-   	{
+   	{		
+
    		Eval_Result & r = ((*j)->evaluate(eval_env, file_buffer));
+
+   		if( !r.is_variable_defined() )
+		{
+			report_error(" Variable should be defined before its use",NOLINE);
+		}
 
 		if(r.get_result_enum()==int_result)
 		{
 			Eval_Result_Value_Int * j = new Eval_Result_Value_Int();
 			j->set_value(r.get_value());
-			j->set_variable_status(true);
 			eval_result_list.push_back(j);
 		}
 		else if(r.get_result_enum()==float_result)
 		{
 			Eval_Result_Value_Float * j = new Eval_Result_Value_Float();
-			j->set_value(r.get_value());
-			j->set_variable_status(true);
+			j->set_value(r.get_value());			
 			eval_result_list.push_back(j);
 		}
    	}

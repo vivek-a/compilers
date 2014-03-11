@@ -179,7 +179,7 @@ Eval_Result & Procedure::evaluate(ostream & file_buffer,list<Eval_Result_Value *
 	
 
 	for(j = eval_result_list.begin() , i = (params_list.get_symbol_table()).begin(); i != params_list.get_symbol_table().end();j++)
-	{
+	{		
 		eval_env.put_variable_value( *(*j), (*i)->get_variable_name());
 		i++;
 	}
@@ -222,15 +222,15 @@ Eval_Result & Procedure::evaluate(ostream & file_buffer,list<Eval_Result_Value *
 		// cout<<endl<<LOC_VAR_SPACE<<"   return : "<< fixed <<setprecision(0)<<result->get_value()<<endl;
 		Eval_Result_Value * put_result =  new Eval_Result_Value_Int();
 		put_result->set_value(result->get_value());
-		put_result->set_variable_status(true);
+		put_result->set_variable_status(result->is_variable_defined());
 		eval_env.put_variable_value( *put_result , "return" );
 	}
 	else if(result->get_result_enum()  == float_result &&  result->is_variable_defined() )
 	{
 		// cout<<endl<<LOC_VAR_SPACE<<"   return : "<< fixed <<setprecision(2)<<result->get_value()<<endl;
 		Eval_Result_Value * put_result =  new Eval_Result_Value_Float();
-		put_result->set_variable_status(true);
 		put_result->set_value(result->get_value());
+		put_result->set_variable_status(result->is_variable_defined());
 		eval_env.put_variable_value( *put_result , "return" );
 	}
 
