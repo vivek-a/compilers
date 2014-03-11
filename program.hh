@@ -46,7 +46,7 @@ public:
 	~Program();
 	void delete_all();
 
-	bool check_if_prototype_exist(string * proc,Symbol_Table * sym_table,int line);
+	bool check_if_prototype_exist(string * proc,Symbol_Table * sym_table);
 	bool input_params_type_check(Procedure * proc , list<Ast *>  input_params);
 
 	void set_procedure_map(Procedure & proc);

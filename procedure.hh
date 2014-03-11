@@ -55,6 +55,8 @@ public:
 	Symbol_Table get_params_list();
 	void set_params_list(Symbol_Table & params_list);
 
+	void check_with_arg_list(string var_name,int line);
+
 	vector<int> get_goto_list();
 	void add_to_goto_list(int num);
 
@@ -73,6 +75,7 @@ public:
 	Eval_Result & evaluate(ostream & file_buffer,list<Eval_Result_Value *>);
 
 	bool variable_in_symbol_list_check(string variable);
+	bool variable_in_param_list_check(string variable);
 };
 
 #endif

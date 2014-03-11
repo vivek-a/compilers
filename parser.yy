@@ -123,7 +123,7 @@ procedure_name:
 
 		
 
-		if(!program_object.check_if_prototype_exist($1,$3,line))
+		if(!program_object.check_if_prototype_exist($1,$3))
 		{
 			current_procedure = program_object.get_procedure(*$1);
 		}
@@ -132,8 +132,6 @@ procedure_name:
 			
 		 	report_error("Last return statement type, of procedure, and its prototype should match",line);
 		}
-
-		
 
 		if(program_object.variable_in_symbol_list_check(*$1))
 		{
@@ -152,7 +150,7 @@ procedure_name:
 			report_error("Procedure corresponding to the name is not found",line);	
 		}	
 
-		if(!program_object.check_if_prototype_exist($1,NULL,line))
+		if(!program_object.check_if_prototype_exist($1,NULL))
 		{
 			current_procedure = program_object.get_procedure(*$1);
 		}
@@ -197,10 +195,16 @@ declaration_statement_list:
 		int line = get_line_number();
 
 		string var_name = $1->get_variable_name();
-		if (current_procedure && current_procedure->get_proc_name() == var_name)
+
+		if(program_object.get_procedure(var_name)!= NULL)
+		{
+			report_error("Variable name cannot be same as procedure name", line);
+		}
+
+		if (current_procedure)
 		{
 			int line = get_line_number();
-			report_error("Variable name cannot be same as procedure name", line);
+			current_procedure->check_with_arg_list(var_name,line);
 		}
 
 
@@ -222,6 +226,13 @@ declaration_statement_list:
 			int line = get_line_number();
 			report_error("Variable name cannot be same as procedure name", line);
 		}
+
+		if (current_procedure)
+		{
+			int line = get_line_number();
+			current_procedure->check_with_arg_list(var_name,line);
+		}
+
 
 		if ($1 != NULL)
 		{
@@ -401,6 +412,21 @@ prototype:
 varlist:
 	varlist ','	var
 	{
+		
+		string var_name = $3->get_variable_name();
+
+		if($1->variable_in_symbol_list_check(var_name))
+		{
+			int line = get_line_number();
+			report_error(" Formal Parameter declared twice", line);
+		}
+
+		if(  program_object.get_procedure($3->get_variable_name())!=NULL )
+		{
+			int line = get_line_number();
+			report_error(" Formal parameter list cannot be same as function name",line);
+		}
+
 		if($1==NULL)
 		{
 			$$ = new Symbol_Table();
@@ -410,6 +436,12 @@ varlist:
 |
 	var
 	{
+		if(  program_object.get_procedure($1->get_variable_name())!=NULL )
+		{
+			int line = get_line_number();
+			report_error(" Formal parameter list cannot be same as function nameh",line);
+		}
+
 		$$ = new Symbol_Table();
 		
 		$$->push_symbol($1);

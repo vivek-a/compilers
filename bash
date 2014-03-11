@@ -4,11 +4,11 @@
 rm -rf tmp
 mkdir tmp
 
-for file in "test_files"/*.c 
-do
-	file=`echo $file | cut -d '/' -f2`
-	make -f Makefile.cfg FILE=$file
-done
+# for file in "test_files"/*.c 
+# do
+# 	file=`echo $file | cut -d '/' -f2`
+# 	make -f Makefile.cfg FILE=$file
+# done
 
 echo "\nProcessing correct files"
 echo "-------------------------\n"
@@ -18,8 +18,8 @@ do
 	echo $file
 	f=`echo $file | cut -d '/' -f2`
 	f=`echo $f | cut -d '.' -f1`
-	./cfglp $file  -tokens -d > out1
-	./cfglp64 $file -tokens -d > out2
+	./cfglp $file  -tokens -ast -eval -d > out1
+	./cfglp64 $file -tokens -ast -eval -d > out2
 	diff out1 out2 -bB > tmp/$f
 done
 

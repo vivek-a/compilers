@@ -174,6 +174,7 @@ void Local_Environment::print(ostream & file_buffer)
 	{
 		Eval_Result_Value * vi = variable_table[(*i).first];
 	
+		// cout<<"\n :::::::::::    ::::::  " << (*i).first << vi->get_result_enum() <<endl;
 
 		if (vi != NULL)
 		{

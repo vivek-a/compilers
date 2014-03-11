@@ -76,8 +76,8 @@ bool Program::input_params_type_check(Procedure * proc , list<Ast *>  input_para
 	return false;	
 }
 
-bool Program::check_if_prototype_exist(string * proc,Symbol_Table * sym_table,int line){
-
+bool Program::check_if_prototype_exist(string * proc,Symbol_Table * sym_table)
+{
 	//check_if_prototype_exist
 
 	map<string, Procedure *>::iterator i;

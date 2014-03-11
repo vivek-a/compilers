@@ -1,6 +1,6 @@
-
+void main();
 void fn();
-void fn2(int a, int a);
+int fn2(int a, int a);
 
 main()
 {

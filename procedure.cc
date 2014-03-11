@@ -44,6 +44,18 @@ Procedure::Procedure(Data_Type proc_return_type, string proc_name)
 	return_check=0;
 }
 
+void Procedure::check_with_arg_list(string var_name,int line)
+{
+	list<Symbol_Table_Entry *>::iterator i;
+	list<Symbol_Table_Entry *> v1 = (this->get_params_list()).get_symbol_table();
+	for (i = v1.begin(); i != v1.end(); i++)
+	{
+		if( (*i)->get_variable_name() == var_name)
+			report_error(" Formal parameter and local variable name cannot be same",line);
+	}	
+	return;
+}
+
 Procedure::~Procedure()
 {
 	list<Basic_Block *>::iterator i;
@@ -107,6 +119,11 @@ Data_Type Procedure::get_return_type()
 bool Procedure::variable_in_symbol_list_check(string variable)
 {
 	return local_symbol_table.variable_in_symbol_list_check(variable);
+}
+
+bool Procedure::variable_in_param_list_check(string variable)
+{
+	return params_list.variable_in_symbol_list_check(variable);
 }
 
 Symbol_Table_Entry & Procedure::get_symbol_table_entry(string variable_name)
