@@ -4,11 +4,11 @@ int fun(int c);
 
 fun(int c)
 {
- 
+   int b;
 
 <bb 2>:
-   
-   return c;
+   b = (int) ((double) a + (double) c / 2.00);
+   return b;
 
 }
 
@@ -20,7 +20,7 @@ main()
 
 <bb 2>:
    b = a;
-   c=fun(2,a);
+   fun(2,a);
    return;
 
 }

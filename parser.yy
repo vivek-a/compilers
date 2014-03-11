@@ -146,31 +146,19 @@ procedure_name:
 	{
 		int line = get_line_number();
 
-		if(*$1 == "main")
+		if(program_object.get_procedure(*$1) == NULL)
 		{
-			new_procedure = new Procedure(void_data_type, *$1);
-			new_procedure->set_local_list(*new Symbol_Table());
-			new_procedure->set_params_list(*new Symbol_Table());
+			
+			report_error("Procedure corresponding to the name is not found",line);	
+		}	
 
-			program_object.set_procedure_map(*new_procedure);
-			current_procedure= new_procedure;
+		if(!program_object.check_if_prototype_exist($1,NULL,line))
+		{
+			current_procedure = program_object.get_procedure(*$1);
 		}
 		else
-		{
-			if(program_object.get_procedure(*$1) == NULL)
-			{
-				
-				report_error("Procedure corresponding to the name is not found",line);	
-			}	
-
-			if(!program_object.check_if_prototype_exist($1,NULL,line))
-			{
-				current_procedure = program_object.get_procedure(*$1);
-			}
-			else
-			{			
-			 	report_error("Last return statement type, of procedure, and its prototype should match",line);
-			}
+		{			
+		 	report_error("Last return statement type, of procedure, and its prototype should match",line);
 		}
 	}
 ;
@@ -813,11 +801,18 @@ constant:
 function_call:
 	NAME '(' input_params_list ')'
 	{
+		int line = get_line_number();
+
 		$$ = new Fn_Call_Ast(program_object.get_procedure(*$1),$3);
 		if(  (((program_object.get_procedure(*$1))->get_params_list()).get_symbol_table()).size() != $3->size()  )		
 		{
-			int line = get_line_number();
 			report_error(" Actual and formal parameter count do not match",line);
+		}
+
+		if( program_object.input_params_type_check(  program_object.get_procedure(*$1) ,*$3) )
+		{	
+			int line = get_line_number();
+			report_error(" Actual and formal parameters data types are not matching",line);
 		}
 	}
 |

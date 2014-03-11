@@ -47,6 +47,7 @@ public:
 	void delete_all();
 
 	bool check_if_prototype_exist(string * proc,Symbol_Table * sym_table,int line);
+	bool input_params_type_check(Procedure * proc , list<Ast *>  input_params);
 
 	void set_procedure_map(Procedure & proc);
 	void set_global_table(Symbol_Table & new_global_table);

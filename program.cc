@@ -53,10 +53,28 @@ void Program::delete_all()
 		delete i->second;
 }
 
-// bool Program::func_and_variable_name_check()
-// {
+bool Program::input_params_type_check(Procedure * proc , list<Ast *>  input_params)
+{
+	//check_if_prototype_exist
 
-// }
+	list<Symbol_Table_Entry *>::iterator i;
+	list<Ast *>::iterator j;
+
+	list<Symbol_Table_Entry *> v2 = (proc->get_params_list()).get_symbol_table();						
+
+	for (i = v2.begin(),j = input_params.begin(); i != v2.end(); i++,j++)
+	{
+		if( (*i)->get_data_type() !=  (*j)->get_data_type() )
+		{
+			return true;
+		}
+	}		
+
+		
+	
+
+	return false;	
+}
 
 bool Program::check_if_prototype_exist(string * proc,Symbol_Table * sym_table,int line){
 
