@@ -19,9 +19,7 @@
            tools are  available at http://www.cse.iitb.ac.in/~uday/cfglp
 
 
-**********************************************************************************************/
-
- 
+***********************************************************************************************/
 
 %scanner ../scanner.h
 %scanner-token-function d_scanner.lex()
@@ -31,848 +29,462 @@
 %union 
 {
 	int integer_value;
-	float float_value;
 	std::string * string_value;
+	pair<Data_Type, string> * decl;
 	list<Ast *> * ast_list;
 	Ast * ast;
 	Symbol_Table * symbol_table;
 	Symbol_Table_Entry * symbol_entry;
 	Basic_Block * basic_block;
 	list<Basic_Block *> * basic_block_list;
+	Procedure * procedure;
 };
 
-%token <integer_value> INTEGER_NUMBER BASIC_BLOCK
-%token <float_value> FLOAT_NUMBER 
+%token <integer_value> INTEGER_NUMBER BBNUM
 %token <string_value> NAME
-%token RETURN INTEGER FLOAT DOUBLE VOID IF ELSE GOTO
+%token RETURN INTEGER IF ELSE GOTO
+%token ASSIGN
 
-%right ASSIGN_OP
-%left NE,EQ
-%left LT,LE,GT,GE
-
-%type <symbol_table> declaration_statement_list
-%type <symbol_table> varlist
-%type <symbol_entry> declaration_statement
-%type <symbol_entry> var
+%type <symbol_table> optional_variable_declaration_list
+%type <symbol_table> variable_declaration_list
+%type <symbol_entry> variable_declaration
+%type <decl> declaration
 %type <basic_block_list> basic_block_list
-%type <ast_list> assignments_statement_list
 %type <basic_block> basic_block
 %type <ast_list> executable_statement_list
-%type <ast_list> input_params_list
-%type <ast> executable_statement
-%type <ast> assignments_statement
-%type <ast> relational_expression
-%type <ast> if_else_loop
-%type <ast> go_to_statement
-%type <ast> expression
+%type <ast_list> assignment_statement_list
+%type <ast> assignment_statement
 %type <ast> variable
 %type <ast> constant
-%type <ast> arithmetic_expression
-%type <ast> term
-%type <ast> factor
-%type <ast> function_call
-
 
 %start program
 
 %%
 
-
 program:
-	declaration_statement_list
+	optional_declaration_list procedure_definition
 	{
-		if($1!=NULL){
-			program_object.set_global_table(*$1);
-		}
-	}
+	if (NOT_ONLY_PARSE)
+	{
+		CHECK_INVARIANT((current_procedure != NULL), "Current procedure cannot be null");
 
-	function_list
-	{	
-		
+		program_object.set_procedure_map(current_procedure, get_line_number());
+		program_object.global_list_in_proc_map_check();
+	}
+	}
+;
+
+optional_declaration_list:
+	{
+	if (NOT_ONLY_PARSE)
+	{
+		Symbol_Table * global_table = new Symbol_Table();
+		program_object.set_global_table(*global_table);
+	}
 	}
 |
-	function_list
+	variable_declaration_list
 	{
-		
+	if (NOT_ONLY_PARSE)
+	{
+		Symbol_Table * global_table = $1;
+
+		CHECK_INVARIANT((global_table != NULL), "Global declarations cannot be null");
+
+		program_object.set_global_table(*global_table);
+	}
 	}
 ;
 
-
-function_list:
-	function_list 	function
-	
-|
-	function
-	
-;
-
-function:
-	procedure_name 	procedure_body
-;
-
-procedure_name:
-	NAME '(' varlist ')'
+procedure_definition:
+	NAME '(' ')'
 	{
-		int line = get_line_number();
+	if (NOT_ONLY_PARSE)
+	{
+		CHECK_INVARIANT(($1 != NULL), "Procedure name cannot be null");
 
-		if(program_object.get_procedure(*$1) == NULL)
-		{
-			
-			report_error("Procedure corresponding to the name is not found",line);	
-		}	
+		string proc_name = *$1;
 
-		
-
-		if(!program_object.check_if_prototype_exist($1,$3))
-		{
-			current_procedure = program_object.get_procedure(*$1);
-		}
-		else
-		{
-			
-		 	report_error("Last return statement type, of procedure, and its prototype should match",line);
-		}
-
-		if(program_object.variable_in_symbol_list_check(*$1))
-		{
-			
-			report_error(" Procedure name cannot be same as global variable",line);	
-		}
+		current_procedure = new Procedure(void_data_type, proc_name, get_line_number());
 	}
-|
-	NAME '('  ')'
-	{
-		int line = get_line_number();
-
-		if(program_object.get_procedure(*$1) == NULL)
-		{
-			
-			report_error("Procedure corresponding to the name is not found",line);	
-		}	
-
-		if(!program_object.check_if_prototype_exist($1,NULL))
-		{
-			current_procedure = program_object.get_procedure(*$1);
-		}
-		else
-		{			
-		 	report_error("Last return statement type, of procedure, and its prototype should match",line);
-		}
 	}
-;
 
-procedure_body:
-	'{' declaration_statement_list  
-	
+	'{' optional_variable_declaration_list
 	{
-		current_procedure->append_local_list(*$2);
+	if (NOT_ONLY_PARSE)
+	{
 
-		delete $2;
+		CHECK_INVARIANT((current_procedure != NULL), "Current procedure cannot be null");
+
+		Symbol_Table * local_table = $6;
+
+		if (local_table == NULL)
+			local_table = new Symbol_Table();
+
+		current_procedure->set_local_list(*local_table);
+	}
 	}
 
 	basic_block_list '}'
 	{
-		current_procedure->set_basic_block_list(*$4);
-		bb_existence_check($4,current_procedure->get_goto_list());		
-		delete $4;
-	}
-	
-|
-	'{' basic_block_list '}'
-	
+	if (NOT_ONLY_PARSE)
 	{
-		current_procedure->set_basic_block_list(*$2);
-		bb_existence_check($2,current_procedure->get_goto_list());
-		delete $2;
+		list<Basic_Block *> * bb_list = $8;
+
+		CHECK_INVARIANT((current_procedure != NULL), "Current procedure cannot be null");
+		CHECK_INVARIANT((bb_list != NULL), "Basic block list cannot be null");
+
+		current_procedure->set_basic_block_list(*bb_list);
 	}
-	
+	}
 ;
 
-declaration_statement_list:
-	
-	declaration_statement
+optional_variable_declaration_list:
 	{
-		int line = get_line_number();
-
-		string var_name = $1->get_variable_name();
-
-		if(program_object.get_procedure(var_name)!= NULL)
-		{
-			report_error("Variable name cannot be same as procedure name", line);
-		}
-
-		if (current_procedure)
-		{
-			int line = get_line_number();
-			current_procedure->check_with_arg_list(var_name,line);
-		}
-
-
-		$$ = new Symbol_Table();
-
-		$$->push_symbol($1);
-
-	}
-|
-	declaration_statement_list declaration_statement
-	
-	{
-		int line = get_line_number();
-		//program_object.variable_in_proc_map_check($2->get_variable_name(), line);
-
-		string var_name = $2->get_variable_name();
-		if (current_procedure && current_procedure->get_proc_name() == var_name)
-		{
-			int line = get_line_number();
-			report_error("Variable name cannot be same as procedure name", line);
-		}
-
-		if (current_procedure)
-		{
-			int line = get_line_number();
-			current_procedure->check_with_arg_list(var_name,line);
-		}
-
-
-		if ($1 != NULL)
-		{
-			if($1->variable_in_symbol_list_check(var_name))
-			{
-				int line = get_line_number();
-				report_error("Variable is declared twice", line);
-			}
-
-			$$ = $1;
-		}
-
-		else
-			$$ = new Symbol_Table();
-
-		$$->push_symbol($2);
-	}
-|
-	declaration_statement_list prototype
-	{
-		$$ = $1;
-	}
-|
-	prototype
+	if (NOT_ONLY_PARSE)
 	{
 		$$ = NULL;
 	}
-;
-
-declaration_statement:
-	INTEGER NAME ';'
-	
-	{	
-		$$ = new Symbol_Table_Entry(*$2, int_data_type);
-		delete $2;
 	}
 |
-	FLOAT NAME ';'
-	
-	{	
-		$$ = new Symbol_Table_Entry(*$2, float_data_type);
-		delete $2;
-	}
-|
-	DOUBLE NAME ';'
-
-	{	
-		$$ = new Symbol_Table_Entry(*$2, float_data_type);
-		delete $2;
-	}	
-
-;
-
-
-prototype:
-	INTEGER NAME '(' varlist ')' ';' 
+	variable_declaration_list
 	{
-		if(program_object.get_procedure(*$2) != NULL)
-		{
-			int line = get_line_number();
-			report_error(" Overloading of the procedure is not allowed",line);	
-		}
-
-
-
-		new_procedure = new Procedure(int_data_type, *$2);
-		new_procedure->set_local_list(*$4);
-		new_procedure->set_params_list(*$4);
-		program_object.set_procedure_map(*new_procedure);
-	}
-|
-	INTEGER NAME '(' ')'  ';'
+	if (NOT_ONLY_PARSE)
 	{
-		if(program_object.get_procedure(*$2) != NULL)
-		{
-			int line = get_line_number();
-			report_error(" Overloading of the procedure is not allowed",line);	
-		}
+		CHECK_INVARIANT(($1 != NULL), "Declaration statement list cannot be null here");
 
-		new_procedure = new Procedure(int_data_type, *$2);
-		new_procedure->set_local_list(*new Symbol_Table());
-		new_procedure->set_params_list(*new Symbol_Table());
-		program_object.set_procedure_map(*new_procedure);
+		$$ = $1;
 	}
-|
-	FLOAT NAME '(' varlist ')' ';'
-	{
-
-		if(program_object.get_procedure(*$2) != NULL)
-		{
-			int line = get_line_number();
-			report_error(" Overloading of the procedure is not allowed",line);	
-		}
-
-		new_procedure = new Procedure(float_data_type, *$2);
-		new_procedure->set_local_list(*$4);
-		new_procedure->set_params_list(*$4);
-		program_object.set_procedure_map(*new_procedure);
-	}
-|
-	FLOAT NAME '(' ')'  ';'
-	{
-
-		if(program_object.get_procedure(*$2) != NULL)
-		{
-			int line = get_line_number();
-			report_error(" Overloading of the procedure is not allowed",line);	
-		}
-
-		new_procedure = new Procedure(float_data_type, *$2);
-		new_procedure->set_local_list(*new Symbol_Table());
-		new_procedure->set_params_list(*new Symbol_Table());
-		program_object.set_procedure_map(*new_procedure);
-	}
-|
-	DOUBLE NAME '(' varlist ')' ';'
-	{
-
-		if(program_object.get_procedure(*$2) != NULL)
-		{
-			int line = get_line_number();
-			report_error(" Overloading of the procedure is not allowed",line);	
-		}
-
-		new_procedure = new Procedure(float_data_type, *$2);
-		new_procedure->set_local_list(*$4);
-		new_procedure->set_params_list(*$4);
-		program_object.set_procedure_map(*new_procedure);
-	}
-|
-	DOUBLE NAME '(' ')'  ';'
-	{
-
-		if(program_object.get_procedure(*$2) != NULL)
-		{
-			int line = get_line_number();
-			report_error(" Overloading of the procedure is not allowed",line);	
-		}
-
-		new_procedure = new Procedure(float_data_type, *$2);
-		new_procedure->set_local_list(*new Symbol_Table());
-		new_procedure->set_params_list(*new Symbol_Table());
-		program_object.set_procedure_map(*new_procedure);
-	}
-|
-	VOID NAME '(' varlist ')' ';'
-	{
-
-		if(program_object.get_procedure(*$2) != NULL)
-		{
-			int line = get_line_number();
-			report_error(" Overloading of the procedure is not allowed",line);	
-		}
-
-		new_procedure = new Procedure(void_data_type, *$2);
-		new_procedure->set_local_list(*$4);
-		new_procedure->set_params_list(*$4);
-		program_object.set_procedure_map(*new_procedure);
-	}
-|
-	VOID NAME '(' ')'  ';'
-	{
-
-		if(program_object.get_procedure(*$2) != NULL)
-		{
-			int line = get_line_number();
-			report_error(" Overloading of the procedure is not allowed",line);	
-		}
-
-		new_procedure = new Procedure(void_data_type, *$2);
-		new_procedure->set_local_list(*new Symbol_Table());
-		new_procedure->set_params_list(*new Symbol_Table());
-		program_object.set_procedure_map(*new_procedure);
 	}
 ;
 
-varlist:
-	varlist ','	var
+variable_declaration_list:
+	variable_declaration
 	{
-		
-		string var_name = $3->get_variable_name();
+	if (NOT_ONLY_PARSE)
+	{
+		Symbol_Table_Entry * decl_stmt = $1;
 
-		if($1->variable_in_symbol_list_check(var_name))
+		CHECK_INVARIANT((decl_stmt != NULL), "Non-terminal declaration statement cannot be null");
+
+		string decl_name = decl_stmt->get_variable_name();
+		CHECK_INPUT ((program_object.variable_in_proc_map_check(decl_name) == false),
+				"Variable name cannot be same as the procedure name", get_line_number());
+
+		if (current_procedure != NULL)
 		{
-			int line = get_line_number();
-			report_error(" Formal Parameter declared twice", line);
+			CHECK_INPUT((current_procedure->get_proc_name() != decl_name),
+				"Variable name cannot be same as procedure name", get_line_number());
 		}
 
-		if(  program_object.get_procedure($3->get_variable_name())!=NULL )
-		{
-			int line = get_line_number();
-			report_error(" Formal parameter list cannot be same as function name",line);
-		}
+		Symbol_Table * decl_list = new Symbol_Table();
+		decl_list->push_symbol(decl_stmt);
 
-		if($1==NULL)
-		{
-			$$ = new Symbol_Table();
-		}
-		$$->push_symbol($3);
+		$$ = decl_list;
+	}
 	}
 |
-	var
+	variable_declaration_list variable_declaration
 	{
-		if(  program_object.get_procedure($1->get_variable_name())!=NULL )
+	if (NOT_ONLY_PARSE)
+	{
+		// if declaration is local then no need to check in global list
+		// if declaration is global then this list is global list
+
+		Symbol_Table_Entry * decl_stmt = $2;
+		Symbol_Table * decl_list = $1;
+
+		CHECK_INVARIANT((decl_stmt != NULL), "The declaration statement cannot be null");
+		CHECK_INVARIANT((decl_list != NULL), "The declaration statement list cannot be null");
+
+		string decl_name = decl_stmt->get_variable_name();
+		CHECK_INPUT((program_object.variable_in_proc_map_check(decl_name) == false),
+			"Procedure name cannot be same as the variable name", get_line_number());
+		if (current_procedure != NULL)
 		{
-			int line = get_line_number();
-			report_error(" Formal parameter list cannot be same as function nameh",line);
+			CHECK_INPUT((current_procedure->get_proc_name() != decl_name),
+				"Variable name cannot be same as procedure name", get_line_number());
 		}
 
-		$$ = new Symbol_Table();
-		
-		$$->push_symbol($1);
-	}
+		CHECK_INPUT((decl_list->variable_in_symbol_list_check(decl_name) == false), 
+				"Variable is declared twice", get_line_number());
 
+		decl_list->push_symbol(decl_stmt);
+		$$ = decl_list;
+	}
+	}
 ;
 
-var: 
-	INTEGER	NAME
+variable_declaration:
+	declaration ';'
 	{
-		$$ = new Symbol_Table_Entry(*$2, int_data_type);
+	if (NOT_ONLY_PARSE)
+	{
+		pair<Data_Type, string> * decl_stmt = $1;
+
+		CHECK_INVARIANT((decl_stmt != NULL), "Declaration cannot be null");
+
+		Data_Type type = decl_stmt->first;
+		string decl_name = decl_stmt->second;
+
+		Symbol_Table_Entry * decl_entry = new Symbol_Table_Entry(decl_name, type, get_line_number());
+
+		$$ = decl_entry;
+
 	}
-|
-	FLOAT	NAME
-	{
-		$$ = new Symbol_Table_Entry(*$2, float_data_type);
-	}
-|
-	DOUBLE	NAME
-	{
-		$$ = new Symbol_Table_Entry(*$2, float_data_type);
 	}
 ;
 
+declaration:
+	INTEGER NAME
+	{
+	if (NOT_ONLY_PARSE)
+	{
+		CHECK_INVARIANT(($2 != NULL), "Name cannot be null");
+
+		string name = *$2;
+		Data_Type type = int_data_type;
+
+		pair<Data_Type, string> * declar = new pair<Data_Type, string>(type, name);
+
+		$$ = declar;
+	}
+	}
+;
 
 basic_block_list:
 	basic_block_list basic_block
-	
 	{
-		if (!$2)
-		{
-			int line = get_line_number();
-			report_error("Basic block doesn't exist", line);
-		}
+	if (NOT_ONLY_PARSE)
+	{
+		list<Basic_Block *> * bb_list = $1;
+		Basic_Block * bb = $2;
 
-		bb_strictly_increasing_order_check($$, $2->get_bb_number());
-		$$ = $1;
-		($$->back())->set_successor(true);
+		CHECK_INVARIANT((bb_list != NULL), "New basic block cannot be null");
+		CHECK_INVARIANT((bb != NULL), "Basic block cannot be null");
 
-		$$->push_back($2);
+		bb_strictly_increasing_order_check(bb_list, bb->get_bb_number());
+
+		bb_list->push_back($2);
+		$$ = bb_list;
 	}
-	
+	}
 |
 	basic_block
-	
 	{
-		if (!$1)
-		{
-			int line = get_line_number();
-			report_error("Basic block doesn't exist", line);
-		}
+	if (NOT_ONLY_PARSE)
+	{
+		Basic_Block * bb = $1;
 
-		$$ = new list<Basic_Block *>;
-		$$->push_back($1);
+		CHECK_INVARIANT((bb != NULL), "Basic block cannot be null");
+
+		list<Basic_Block *> * bb_list = new list<Basic_Block *>;
+		bb_list->push_back(bb);
+
+		$$ = bb_list;
 	}
-	
+	}
 ;
 
 basic_block:
-	BASIC_BLOCK ':' executable_statement_list
-	
+	BBNUM ':' executable_statement_list
 	{
-		
+	if (NOT_ONLY_PARSE)
+	{
+		int bb_number = $1;
+		list<Ast *> * exe_stmt = $3;
 
-		if ($1 < 2)
-		{
-			int line = get_line_number();
-			report_error("Illegal basic block lable", line);
-		}		
+		CHECK_INPUT((bb_number >= 2), "Illegal basic block lable", get_line_number());
 
-		if ($3 != NULL)
-			$$ = new Basic_Block($1,*$3,successor);
+		Basic_Block * bb = new Basic_Block(bb_number, get_line_number());
+
+		if (exe_stmt != NULL)
+			bb->set_ast_list(*exe_stmt);
 		else
 		{
 			list<Ast *> * ast_list = new list<Ast *>;
-			$$ = new Basic_Block($1, *ast_list,successor);
+			bb->set_ast_list(*ast_list);
 		}
 
-		delete $3;		
-	 }
-	
+		$$ = bb;
+	}
+	}
 ;
 
 executable_statement_list:
-
-	assignments_statement_list executable_statement
+	assignment_statement_list
 	{
-		if ($1 == NULL)
-			$$ = new list<Ast *>;		
+	if (NOT_ONLY_PARSE)
+	{
+		$$ = $1;
+	}
+	}
+|
+	assignment_statement_list RETURN ';'
+	{
+		if (NOT_ONLY_PARSE)
+		{
+			list<Ast *> * assign_list = $1;
+			Ast * ret = new Return_Ast(get_line_number());
+			list<Ast *> * exe_list = NULL;
+
+			if (assign_list)
+				exe_list = assign_list;
+
+			else
+				exe_list = new list<Ast *>;
+
+			exe_list->push_back(ret);
+
+			$$ = exe_list;
+		}
+	}
+|
+	assignment_statement_list goto_stmt
+	{
+		if (NOT_ONLY_PARSE)
+		{
+			list<Ast *> * assign_list = $1;
+			Ast * ret = new Return_Ast(get_line_number());
+			list<Ast *> * exe_list = NULL;
+
+			if (assign_list)
+				exe_list = assign_list;
+
+			else
+				exe_list = new list<Ast *>;
+
+			exe_list->push_back(ret);
+
+			$$ = exe_list;
+		}
+	}
+|
+	assignment_statement_list if_else_stmt
+	{
+		if (NOT_ONLY_PARSE)
+		{
+			list<Ast *> * assign_list = $1;
+			Ast * ret = new Return_Ast(get_line_number());
+			list<Ast *> * exe_list = NULL;
+
+			if (assign_list)
+				exe_list = assign_list;
+
+			else
+				exe_list = new list<Ast *>;
+
+			exe_list->push_back(ret);
+
+			$$ = exe_list;
+		}
+	}
+;
+
+assignment_statement_list:
+	{
+	if (NOT_ONLY_PARSE)
+	{
+		$$ = NULL;
+	}
+	}
+|
+	assignment_statement_list assignment_statement
+	{
+	if (NOT_ONLY_PARSE)
+	{
+		list<Ast *> * assign_list = $1;
+		Ast * assign_stmt = $2;
+		list<Ast *> * assign_list_new = NULL;
+
+		CHECK_INVARIANT((assign_stmt != NULL), "Assignment statement cannot be null");
+
+		if (assign_list == NULL)
+			assign_list_new = new list<Ast *>;
+
 		else
-			$$ = $1;
-		if($2 != NULL)
-			$$->push_back($2);	
+			assign_list_new = assign_list;
+
+		assign_list_new->push_back(assign_stmt);
+
+		$$ = assign_list_new;
 	}
-|
-	assignments_statement_list
-	{
-		if ($1 == NULL)
-			$$ = new list<Ast *>;		
-		else
-			$$ = $1;
-		successor = false;	
-	}
-|
-	assignments_statement_list  RETURN  relational_expression ';'
-	{
-		Ast * ret = new Return_Ast($3,current_procedure);
-
-		if ($1 != NULL)
-			$$ = $1;
-		else
-			$$ = new list<Ast *>;
-
-		$$->push_back(ret);
-		successor=true;
-	}
-|
-	assignments_statement_list  RETURN  ';'
-	{
-		Ast * ret = new Return_Ast(NULL,current_procedure);
-
-		if ($1 != NULL)
-			$$ = $1;
-		else
-			$$ = new list<Ast *>;
-
-		$$->push_back(ret);
-		successor=true;
-
-		// if(current_procedure->get_return_type() != void_data_type){
-		// 	int line = get_line_number();
-		// 	report_error("return type not matching prototype return type", line);
-		// }
 	}
 ;
 
-executable_statement:
-	if_else_loop
+assignment_statement:
+	variable ASSIGN variable ';'
 	{
-		$$=$1;
-		successor=true;
-	}
-|
-	go_to_statement
+	if (NOT_ONLY_PARSE)
 	{
-		$$=$1;
-		successor=true;
-	}
-;
+		CHECK_INVARIANT((($1 != NULL) && ($3 != NULL)), "lhs/rhs cannot be null");
 
-assignments_statement_list:
+		Ast * lhs = $1;
+		Ast * rhs = $3;
 
-	{
-		$$ = NULL;	
-	}
+		Ast * assign = new Assignment_Ast(lhs, rhs, get_line_number());
 
-|
-	assignments_statement_list assignments_statement
-	
-	{
-		if ($1 == NULL)
-			$$ = new list<Ast *>;
-		else
-			$$ = $1;
+		assign->check_ast();
 
-		$$->push_back($2);		
+		$$ = assign;
 	}
-	
-;
+	}
+|
+	variable ASSIGN constant ';'
+	{
+	if (NOT_ONLY_PARSE)
+	{
+		CHECK_INVARIANT((($1 != NULL) && ($3 != NULL)), "lhs/rhs cannot be null");
 
-assignments_statement:
-	variable ASSIGN_OP relational_expression ';'
-	{
-		$$ = new Assignment_Ast($1,$3);
+		Ast * lhs = $1;
+		Ast * rhs = $3;
 
-		int line = get_line_number();
-		$$->check_ast(line);		
-	}
-|
-	function_call ';'
-	{
-		$$=$1;
-	}
-;
+		Ast * assign = new Assignment_Ast(lhs, rhs, get_line_number());
 
-if_else_loop:
-	IF '(' relational_expression ')'  go_to_statement  ELSE go_to_statement
-	{		
-		$$ = new If_Else_Loop_Ast($3,$5,$7);
-	}
-;
+		assign->check_ast();
 
-go_to_statement:
-	GOTO BASIC_BLOCK ';'
-	{
-		//Check basic block number exist
-
-		$$ = new Goto_Ast( $2 );
-		current_procedure->add_to_goto_list($2);
+		$$ = assign;
 	}
-;
-
-
-relational_expression:
-
-	relational_expression EQ relational_expression 
-	{
-		// $$ = new Relational_Expr_Ast($1,$3,$2);
-		$$ = new Relational_Expr_Ast($1,$3,"EQ");
-		int line = get_line_number();
-		$$->check_ast(line);
-	}
-|
-	relational_expression NE relational_expression 
-	{
-		// $$ = new Relational_Expr_Ast($1,$3,$2);
-		$$ = new Relational_Expr_Ast($1,$3,"NE");
-		int line = get_line_number();
-		$$->check_ast(line);
-	}
-|
-	relational_expression LT relational_expression 
-	{
-		// $$ = new Relational_Expr_Ast($1,$3,$2);
-		$$ = new Relational_Expr_Ast($1,$3,"LT");
-		int line = get_line_number();
-		$$->check_ast(line);
-	}
-|
-	relational_expression LE relational_expression 
-	{
-		$$ = new Relational_Expr_Ast($1,$3,"LE");
-		int line = get_line_number();
-		$$->check_ast(line);
-	}
-|
-	relational_expression GT relational_expression 
-	{
-		$$ = new Relational_Expr_Ast($1,$3,"GT");
-		int line = get_line_number();
-		$$->check_ast(line);
-	}
-|
-	relational_expression GE relational_expression
-	{
-		$$ = new Relational_Expr_Ast($1,$3,"GE");
-		int line = get_line_number();
-		$$->check_ast(line);
-	}
-|	
-	arithmetic_expression
-	{
-		$$=$1;
-	}
-;
-
-
-arithmetic_expression:
-	arithmetic_expression '+' term 
-	{
-		$$ = new Arith_Expr_Ast($1,$3,"PLUS");
-		int line = get_line_number();
-		$$->check_ast(line);
-	}
-|
-	arithmetic_expression '-' term
-	{
-		$$ = new Arith_Expr_Ast($1,$3,"MINUS");
-		int line = get_line_number();
-		$$->check_ast(line);
-	}
-|
-	term
-	{
-		$$=$1;
-	}
-;
-
-term:
-	term '*' factor
-	{
-		$$ = new Arith_Expr_Ast($1,$3,"MULT");
-		int line = get_line_number();
-		$$->check_ast(line);
-	}
-|
-	term '/'  factor
-	{
-		$$ = new Arith_Expr_Ast($1,$3,"DIV");
-		int line = get_line_number();
-		$$->check_ast(line);
-	}
-|
-	factor
-	{
-		$$=$1;
-	}
-;
-
-factor:
-	'-' expression
-	{
-		$$ = new Unary_Expr_Ast($2);
-	}
-|
-	'(' FLOAT ')' expression
-	{
-		
-		$$ = new Typecast_Expr_Ast($4,"float");
-	}
-|
-	'(' INTEGER ')' expression
-	{
-		
-		$$ = new Typecast_Expr_Ast($4,"integer");
-	}
-|
-	'(' DOUBLE ')' expression
-	{	
-		$$ = new Typecast_Expr_Ast($4,"double");
-	}
-|
-	expression
-	{
-		$$=$1;
-	}
-;
-
-expression:
-	variable 
-	{
-		$$=$1;
-	}
-|
-	constant
-	{
-		$$=$1;
-	}
-|
-	'(' relational_expression ')'
-	{
-		$$=$2;
 	}
 ;
 
 variable:
 	NAME
-
 	{
-		Symbol_Table_Entry var_table_entry;
+	if (NOT_ONLY_PARSE)
+	{
+		Symbol_Table_Entry * var_table_entry;
 
-		if (current_procedure->variable_in_symbol_list_check(*$1))
-			 var_table_entry = current_procedure->get_symbol_table_entry(*$1);
+		CHECK_INVARIANT(($1 != NULL), "Variable name cannot be null");
 
-		else if (program_object.variable_in_symbol_list_check(*$1))
-			var_table_entry = program_object.get_symbol_table_entry(*$1);
+		string var_name = *$1;
+
+		if (current_procedure->variable_in_symbol_list_check(var_name) == true)
+			 var_table_entry = &(current_procedure->get_symbol_table_entry(var_name));
+
+		else if (program_object.variable_in_symbol_list_check(var_name) == true)
+			var_table_entry = &(program_object.get_symbol_table_entry(var_name));
 
 		else
-		{
-			int line = get_line_number();
-			report_error("Variable has not been declared", line);
-		}
+			CHECK_INVARIANT(CONTROL_SHOULD_NOT_REACH, "Variable has not been declared");
 
-		$$ = new Name_Ast(*$1, var_table_entry);
+		Ast * name_ast = new Name_Ast(var_name, *var_table_entry, get_line_number());
 
-		delete $1;
-	 }
+		$$ = name_ast;
+	}
+	}
 ;
 
 constant:
 	INTEGER_NUMBER
 	{
-		$$ = new Number_Ast<int>($1, int_data_type);
-	}	
-|
-	FLOAT_NUMBER
+	if (NOT_ONLY_PARSE)
 	{
-		$$ = new Number_Ast<float>($1, float_data_type);
+		int num = $1;
+
+		Ast * num_ast = new Number_Ast<int>(num, int_data_type, get_line_number());
+
+		$$ = num_ast;
 	}
-|
-	function_call
-	{
-		$$ = $1;
-	}
-;
-
-
-
-function_call:
-	NAME '(' input_params_list ')'
-	{
-		int line = get_line_number();
-
-		$$ = new Fn_Call_Ast(program_object.get_procedure(*$1),$3);
-		if(  (((program_object.get_procedure(*$1))->get_params_list()).get_symbol_table()).size() != $3->size()  )		
-		{
-			report_error(" Actual and formal parameter count do not match",line);
-		}
-
-		if( program_object.input_params_type_check(  program_object.get_procedure(*$1) ,*$3) )
-		{	
-			int line = get_line_number();
-			report_error(" Actual and formal parameters data types are not matching",line);
-		}
-	}
-|
-	NAME '('  ')'
-	{
-		$$ = new Fn_Call_Ast(program_object.get_procedure(*$1),NULL);
-		if(  (((program_object.get_procedure(*$1))->get_params_list()).get_symbol_table()).size() != 0  )		
-		{
-			int line = get_line_number();
-			report_error(" Actual and formal parameter count do not match",line);
-		}
-	}
-;
-
-input_params_list:
-	input_params_list ',' relational_expression
-	{
-		if($1==NULL){
-			$$ = new list<Ast *>;
-		}
-		$$->push_back($3);
-	}
-|
-	relational_expression
-	{
-		
-		$$ = new list<Ast *>;
-		
-		$$->push_back($1);
 	}
 ;

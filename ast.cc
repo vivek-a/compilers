@@ -21,18 +21,23 @@
 
 ***********************************************************************************************/
 
-#include <iostream>
-#include <fstream>
-#include <iomanip>
+#include<iostream>
+#include<fstream>
+#include<typeinfo>
 
 using namespace std;
 
-#include"user-options.hh"
+#include"common-classes.hh"
 #include"error-display.hh"
+#include"user-options.hh"
 #include"local-environment.hh"
-
+#include"icode.hh"
+#include"reg-alloc.hh"
 #include"symbol-table.hh"
 #include"ast.hh"
+#include"basic-block.hh"
+#include"procedure.hh"
+#include"program.hh"
 
 Ast::Ast()
 {}
@@ -40,42 +45,200 @@ Ast::Ast()
 Ast::~Ast()
 {}
 
-
-int Ast::get_number() {
-	return basic_block_number;
-}
-
-bool Ast::check_ast(int line)
+bool Ast::check_ast()
 {
-	report_internal_error("Should not reach, Ast : check_ast");
+	stringstream msg;
+	msg << "No check_ast() function for " << typeid(*this).name();
+	CHECK_INVARIANT(CONTROL_SHOULD_NOT_REACH, msg.str());
 }
 
 Data_Type Ast::get_data_type()
 {
-	report_internal_error("Should not reach, Ast : get_data_type");
+	stringstream msg;
+	msg << "No get_data_type() function for " << typeid(*this).name();
+	CHECK_INVARIANT(CONTROL_SHOULD_NOT_REACH, msg.str());
+}
+
+Symbol_Table_Entry & Ast::get_symbol_entry()
+{
+	stringstream msg;
+	msg << "No get_symbol_entry() function for " << typeid(*this).name();
+	CHECK_INVARIANT(CONTROL_SHOULD_NOT_REACH, msg.str());
 }
 
 void Ast::print_value(Local_Environment & eval_env, ostream & file_buffer)
 {
-	report_internal_error("Should not reach, Ast : print_value");
+	stringstream msg;
+	msg << "No print_value() function for " << typeid(*this).name();
+	CHECK_INVARIANT(CONTROL_SHOULD_NOT_REACH, msg.str());
 }
 
 Eval_Result & Ast::get_value_of_evaluation(Local_Environment & eval_env)
 {
-	report_internal_error("Should not reach, Ast : get_value_of_evaluation");
+	stringstream msg;
+	msg << "No get_value_of_evaluation() function for " << typeid(*this).name();
+	CHECK_INVARIANT(CONTROL_SHOULD_NOT_REACH, msg.str());
 }
 
 void Ast::set_value_of_evaluation(Local_Environment & eval_env, Eval_Result & result)
 {
-	report_internal_error("Should not reach, Ast : set_value_of_evaluation");
+	stringstream msg;
+	msg << "No set_value_of_evaluation() function for " << typeid(*this).name();
+	CHECK_INVARIANT(CONTROL_SHOULD_NOT_REACH, msg.str());
 }
 
-////////////////////////////////////////////////////////////////////////////////////////
-
-Name_Ast::Name_Ast(string & name, Symbol_Table_Entry & var_entry)
+Code_For_Ast & Ast::create_store_stmt(Register_Descriptor * store_register)
 {
-	variable_name = name;
-	variable_symbol_entry = var_entry;
+	stringstream msg;
+	msg << "No create_store_stmt() function for " << typeid(*this).name();
+	CHECK_INVARIANT(CONTROL_SHOULD_NOT_REACH, msg.str());
+}
+
+////////////////////////////////////////////////////////////////
+
+Assignment_Ast::Assignment_Ast(Ast * temp_lhs, Ast * temp_rhs, int line)
+{
+	lhs = temp_lhs;
+	rhs = temp_rhs;
+
+	ast_num_child = binary_arity;
+	node_data_type = void_data_type;
+
+	lineno = line;
+}
+
+Assignment_Ast::~Assignment_Ast()
+{
+	delete lhs;
+	delete rhs;
+}
+
+bool Assignment_Ast::check_ast()
+{
+	CHECK_INVARIANT((rhs != NULL), "Rhs of Assignment_Ast cannot be null");
+	CHECK_INVARIANT((lhs != NULL), "Lhs of Assignment_Ast cannot be null");
+
+	if (lhs->get_data_type() == rhs->get_data_type())
+	{
+		node_data_type = lhs->get_data_type();
+		return true;
+	}
+
+	CHECK_INVARIANT(CONTROL_SHOULD_NOT_REACH, 
+		"Assignment statement data type not compatible");
+}
+
+void Assignment_Ast::print(ostream & file_buffer)
+{
+	file_buffer << "\n" << AST_SPACE << "Asgn:";
+
+	file_buffer << "\n" << AST_NODE_SPACE << "LHS (";
+	lhs->print(file_buffer);
+	file_buffer << ")";
+
+	file_buffer << "\n" << AST_NODE_SPACE << "RHS (";
+	rhs->print(file_buffer);
+	file_buffer << ")";
+}
+
+Eval_Result & Assignment_Ast::evaluate(Local_Environment & eval_env, ostream & file_buffer)
+{
+	CHECK_INVARIANT((rhs != NULL), "Rhs of Assignment_Ast cannot be null");
+	Eval_Result & result = rhs->evaluate(eval_env, file_buffer);
+
+	CHECK_INPUT_AND_ABORT(result.is_variable_defined(), "Variable should be defined to be on rhs of Assignment_Ast", lineno);
+
+	CHECK_INVARIANT((lhs != NULL), "Lhs of Assignment_Ast cannot be null");
+
+	lhs->set_value_of_evaluation(eval_env, result);
+
+	// Print the result
+
+	print(file_buffer);
+
+	lhs->print_value(eval_env, file_buffer);
+
+	return result;
+}
+
+Code_For_Ast & Assignment_Ast::compile()
+{
+	/* 
+		An assignment x = y where y is a variable is 
+		compiled as a combination of load and store statements:
+		(load) R <- y 
+		(store) x <- R
+		If y is a constant, the statement is compiled as:
+		(imm_Load) R <- y 
+		(store) x <- R
+		where imm_Load denotes the load immediate operation.
+	*/
+
+	CHECK_INVARIANT((lhs != NULL), "Lhs cannot be null");
+	CHECK_INVARIANT((rhs != NULL), "Rhs cannot be null");
+
+	Code_For_Ast & load_stmt = rhs->compile();
+
+	Register_Descriptor * load_register = load_stmt.get_reg();
+
+	Code_For_Ast store_stmt = lhs->create_store_stmt(load_register);
+
+	// Store the statement in ic_list
+
+	list<Icode_Stmt *> & ic_list = *new list<Icode_Stmt *>;
+
+	if (load_stmt.get_icode_list().empty() == false)
+		ic_list = load_stmt.get_icode_list();
+
+	if (store_stmt.get_icode_list().empty() == false)
+		ic_list.splice(ic_list.end(), store_stmt.get_icode_list());
+
+	Code_For_Ast * assign_stmt;
+	if (ic_list.empty() == false)
+		assign_stmt = new Code_For_Ast(ic_list, load_register);
+
+	return *assign_stmt;
+}
+
+Code_For_Ast & Assignment_Ast::compile_and_optimize_ast(Lra_Outcome & lra)
+{
+	CHECK_INVARIANT((lhs != NULL), "Lhs cannot be null");
+	CHECK_INVARIANT((rhs != NULL), "Rhs cannot be null");
+
+	lra.optimize_lra(mc_2m, lhs, rhs);
+	Code_For_Ast load_stmt = rhs->compile_and_optimize_ast(lra);
+
+	Register_Descriptor * result_register = load_stmt.get_reg();
+
+	Code_For_Ast store_stmt = lhs->create_store_stmt(result_register);
+
+	list<Icode_Stmt *> ic_list;
+
+	if (load_stmt.get_icode_list().empty() == false)
+		ic_list = load_stmt.get_icode_list();
+
+	if (store_stmt.get_icode_list().empty() == false)
+		ic_list.splice(ic_list.end(), store_stmt.get_icode_list());
+
+	Code_For_Ast * assign_stmt;
+	if (ic_list.empty() == false)
+		assign_stmt = new Code_For_Ast(ic_list, result_register);
+
+	return *assign_stmt;
+}
+
+/////////////////////////////////////////////////////////////////
+
+Name_Ast::Name_Ast(string & name, Symbol_Table_Entry & var_entry, int line)
+{
+	variable_symbol_entry = &var_entry;
+
+	CHECK_INVARIANT((variable_symbol_entry->get_variable_name() == name),
+		"Variable's symbol entry is not matching its name");
+
+	ast_num_child = zero_arity;
+	node_data_type = variable_symbol_entry->get_data_type();
+	lineno = line;
 }
 
 Name_Ast::~Name_Ast()
@@ -83,71 +246,65 @@ Name_Ast::~Name_Ast()
 
 Data_Type Name_Ast::get_data_type()
 {
-	return variable_symbol_entry.get_data_type();
+	return variable_symbol_entry->get_data_type();
 }
 
-string Name_Ast::get_name()
+Symbol_Table_Entry & Name_Ast::get_symbol_entry()
 {
-	return variable_name;
+	return *variable_symbol_entry;
 }
 
-void Name_Ast::print_ast(ostream & file_buffer)
+void Name_Ast::print(ostream & file_buffer)
 {
-	file_buffer << "Name : " << variable_name;
+	file_buffer << "Name : " << variable_symbol_entry->get_variable_name();
 }
 
 void Name_Ast::print_value(Local_Environment & eval_env, ostream & file_buffer)
 {
-	Eval_Result_Value * loc_var_val = eval_env.get_variable_value(variable_name);
-	Eval_Result_Value * glob_var_val = interpreter_global_table.get_variable_value(variable_name);
+	string variable_name = variable_symbol_entry->get_variable_name();
 
-	file_buffer << AST_SPACE << variable_name << " : ";
+	Eval_Result * loc_var_val = eval_env.get_variable_value(variable_name);
+	Eval_Result * glob_var_val = interpreter_global_table.get_variable_value(variable_name);
+
+	file_buffer << "\n" << AST_SPACE << variable_name << " : ";
 
 	if (!eval_env.is_variable_defined(variable_name) && !interpreter_global_table.is_variable_defined(variable_name))
 		file_buffer << "undefined";
 
 	else if (eval_env.is_variable_defined(variable_name) && loc_var_val != NULL)
 	{
-		if(loc_var_val->get_result_enum()==float_result){
-			file_buffer << fixed << setprecision(2) << loc_var_val->get_value() << "\n";
-		}
-		else if(loc_var_val->get_result_enum()==int_result){
-			file_buffer << fixed << setprecision(0) << loc_var_val->get_value() << "\n";
-		}
-		else{
-			report_internal_error("Result type can only be int and float");
-		}
+		CHECK_INVARIANT(loc_var_val->get_result_enum() == int_result, "Result type can only be int");
+		file_buffer << loc_var_val->get_int_value() << "\n";
 	}
 
 	else
 	{
-		if (glob_var_val->get_result_enum() == int_result)
-		{
-			if (glob_var_val == NULL)
-				file_buffer << "0\n";
-			else
-				file_buffer << fixed << setprecision(0) << glob_var_val->get_value() << "\n";
-		}
-		else if (glob_var_val->get_result_enum() == float_result)
-		{
-			if (glob_var_val == NULL)
-				file_buffer << "0\n";
-			else
-				file_buffer << fixed << setprecision(2) << glob_var_val->get_value() << "\n";
-		}
+		CHECK_INVARIANT(glob_var_val->get_result_enum() == int_result, 
+			"Result type can only be int and float");
+
+		if (glob_var_val == NULL)
+			file_buffer << "0\n";
 		else
-			report_internal_error("Result type can only be int and float");
+			file_buffer << glob_var_val->get_int_value() << "\n";
 	}
-	// file_buffer << "\n";
+	file_buffer << "\n";
 }
 
 Eval_Result & Name_Ast::get_value_of_evaluation(Local_Environment & eval_env)
 {
+	string variable_name = variable_symbol_entry->get_variable_name();
+
 	if (eval_env.does_variable_exist(variable_name))
 	{
+		CHECK_INPUT_AND_ABORT((eval_env.is_variable_defined(variable_name) == true), 
+					"Variable should be defined before its use", lineno);
+
 		Eval_Result * result = eval_env.get_variable_value(variable_name);
 		return *result;
 	}
+
+	CHECK_INPUT_AND_ABORT((interpreter_global_table.is_variable_defined(variable_name) == true), 
+				"Variable should be defined before its use", lineno);
 
 	Eval_Result * result = interpreter_global_table.get_variable_value(variable_name);
 	return *result;
@@ -155,31 +312,23 @@ Eval_Result & Name_Ast::get_value_of_evaluation(Local_Environment & eval_env)
 
 void Name_Ast::set_value_of_evaluation(Local_Environment & eval_env, Eval_Result & result)
 {
-	
+	Eval_Result * i;
+	string variable_name = variable_symbol_entry->get_variable_name();
+
+	if (variable_symbol_entry->get_data_type() == int_data_type)
+		i = new Eval_Result_Value_Int();
+	else
+		CHECK_INPUT_AND_ABORT(CONTROL_SHOULD_NOT_REACH, "Type of a name can be int/float only", lineno);
+
 	if (result.get_result_enum() == int_result)
-	{
-		//cout<<"int me hun \n"<<result.get_value();
-		Eval_Result_Value_Int * i = new Eval_Result_Value_Int();
-	 	//i->set_value( (int) result.get_value());
-		i->set_value( result.get_value());
+	 	i->set_value(result.get_int_value());
+	else
+		CHECK_INPUT_AND_ABORT(CONTROL_SHOULD_NOT_REACH, "Type of a name can be int/float only", lineno);
 
-	 	if (eval_env.does_variable_exist(variable_name))
-			eval_env.put_variable_value(*i, variable_name);
-		else
-			interpreter_global_table.put_variable_value(*i, variable_name);
-	}
-	else if (result.get_result_enum() == float_result)
-	{
-		//cout<<"float me hun \n";
-		Eval_Result_Value_Float * i = new Eval_Result_Value_Float();
-	 	i->set_value(result.get_value());
-
-	 	if (eval_env.does_variable_exist(variable_name))
-			eval_env.put_variable_value(*i, variable_name);
-		else
-			interpreter_global_table.put_variable_value(*i, variable_name);
-	}
-
+	if (eval_env.does_variable_exist(variable_name))
+		eval_env.put_variable_value(*i, variable_name);
+	else
+		interpreter_global_table.put_variable_value(*i, variable_name);
 }
 
 Eval_Result & Name_Ast::evaluate(Local_Environment & eval_env, ostream & file_buffer)
@@ -187,13 +336,78 @@ Eval_Result & Name_Ast::evaluate(Local_Environment & eval_env, ostream & file_bu
 	return get_value_of_evaluation(eval_env);
 }
 
+Code_For_Ast & Name_Ast::compile()
+{
+	Ics_Opd * opd = new Mem_Addr_Opd(*variable_symbol_entry);
+	Register_Descriptor * result_register = machine_dscr_object.get_new_register();
+	Ics_Opd * register_opd = new Register_Addr_Opd(result_register);
+
+	Icode_Stmt * load_stmt = new Move_IC_Stmt(load, opd, register_opd);
+
+	list<Icode_Stmt *> ic_list;
+	ic_list.push_back(load_stmt);
+
+	Code_For_Ast & load_code = *new Code_For_Ast(ic_list, result_register);
+
+	return load_code;
+}
+
+Code_For_Ast & Name_Ast::create_store_stmt(Register_Descriptor * store_register)
+{
+	CHECK_INVARIANT((store_register != NULL), "Store register cannot be null");
+
+	Ics_Opd * register_opd = new Register_Addr_Opd(store_register);
+	Ics_Opd * opd = new Mem_Addr_Opd(*variable_symbol_entry);
+
+	Icode_Stmt * store_stmt = new Move_IC_Stmt(store, register_opd, opd);
+
+	if (command_options.is_do_lra_selected() == false)
+		variable_symbol_entry->free_register(store_register);
+
+	list<Icode_Stmt *> & ic_list = *new list<Icode_Stmt *>;
+	ic_list.push_back(store_stmt);
+
+	Code_For_Ast & name_code = *new Code_For_Ast(ic_list, store_register);
+
+	return name_code;
+}
+
+Code_For_Ast & Name_Ast::compile_and_optimize_ast(Lra_Outcome & lra)
+{
+	list<Icode_Stmt *> & ic_list = *new list<Icode_Stmt *>;;
+
+	bool load_needed = lra.is_load_needed();
+
+	Register_Descriptor * result_register = lra.get_register();
+	CHECK_INVARIANT((result_register != NULL), "Register cannot be null");
+	Ics_Opd * register_opd = new Register_Addr_Opd(result_register);
+
+	Icode_Stmt * load_stmt = NULL;
+	if (load_needed)
+	{
+		Ics_Opd * opd = new Mem_Addr_Opd(*variable_symbol_entry);
+
+		load_stmt = new Move_IC_Stmt(load, opd, register_opd);
+			
+		ic_list.push_back(load_stmt);
+	}
+
+	Code_For_Ast & load_code = *new Code_For_Ast(ic_list, result_register);
+
+	return load_code;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 
 template <class DATA_TYPE>
-Number_Ast<DATA_TYPE>::Number_Ast(DATA_TYPE number, Data_Type constant_data_type)
+Number_Ast<DATA_TYPE>::Number_Ast(DATA_TYPE number, Data_Type constant_data_type, int line)
 {
 	constant = number;
 	node_data_type = constant_data_type;
+
+	ast_num_child = zero_arity;
+
+	lineno = line;
 }
 
 template <class DATA_TYPE>
@@ -207,16 +421,12 @@ Data_Type Number_Ast<DATA_TYPE>::get_data_type()
 }
 
 template <class DATA_TYPE>
-void Number_Ast<DATA_TYPE>::print_ast(ostream & file_buffer)
+void Number_Ast<DATA_TYPE>::print(ostream & file_buffer)
 {
-	if(node_data_type == float_data_type){
-		//cout<<"flaot hai ye ...... \n ";
-		file_buffer << "Num : " << fixed << std::setprecision(2) << constant;
-	}
-	else{
-		//cout<<"int hai ye.......\n ";
-		file_buffer << "Num : " << fixed << std::setprecision(0) << constant;
-	}
+	file_buffer << std::fixed;
+	file_buffer << std::setprecision(2);
+
+	file_buffer << "Num : " << constant;
 }
 
 template <class DATA_TYPE>
@@ -229,592 +439,77 @@ Eval_Result & Number_Ast<DATA_TYPE>::evaluate(Local_Environment & eval_env, ostr
 
 		return result;
 	}
-	else if (node_data_type == float_data_type)
-	{
-		Eval_Result & result = *new Eval_Result_Value_Float();
-		result.set_value(constant);
+}
 
-		return result;
-	}
+template <class DATA_TYPE>
+Code_For_Ast & Number_Ast<DATA_TYPE>::compile()
+{
+	Register_Descriptor * result_register = machine_dscr_object.get_new_register();
+	CHECK_INVARIANT((result_register != NULL), "Result register cannot be null");
+	Ics_Opd * load_register = new Register_Addr_Opd(result_register);
+	Ics_Opd * opd = new Const_Opd<int>(constant);
+
+	Icode_Stmt * load_stmt = new Move_IC_Stmt(imm_load, opd, load_register);
+
+	list<Icode_Stmt *> & ic_list = *new list<Icode_Stmt *>;
+	ic_list.push_back(load_stmt);
+
+	Code_For_Ast & num_code = *new Code_For_Ast(ic_list, result_register);
+
+	return num_code;
+}
+
+template <class DATA_TYPE>
+Code_For_Ast & Number_Ast<DATA_TYPE>::compile_and_optimize_ast(Lra_Outcome & lra)
+{
+	CHECK_INVARIANT((lra.get_register() != NULL), "Register assigned through optimize_lra cannot be null");
+	Ics_Opd * load_register = new Register_Addr_Opd(lra.get_register());
+	Ics_Opd * opd = new Const_Opd<int>(constant);
+
+	Icode_Stmt * load_stmt = new Move_IC_Stmt(imm_load, opd, load_register);
+
+	list<Icode_Stmt *> ic_list;
+	ic_list.push_back(load_stmt);
+
+	Code_For_Ast & num_code = *new Code_For_Ast(ic_list, lra.get_register());
+
+	return num_code;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
-Return_Ast::Return_Ast(Ast * temp_lhs,Procedure * proc)
+Return_Ast::Return_Ast(int line)
 {
-	this->lhs=temp_lhs;
-	this->proc=proc;
+	lineno = line;
+	node_data_type = void_data_type;
+	ast_num_child = zero_arity;
 }
 
 Return_Ast::~Return_Ast()
-{
-	delete lhs;
-	delete proc;
-}
+{}
 
-void Return_Ast::print_ast(ostream & file_buffer)
+void Return_Ast::print(ostream & file_buffer)
 {
-	if(lhs==NULL){
-		// if(proc->get_proc_name()=="main")file_buffer<<endl;
-		file_buffer<<endl<<AST_SPACE << "RETURN <NOTHING>";
-	}else{
-		// if(proc->get_proc_name()!="main")file_buffer<<endl;
-		file_buffer<<endl<< AST_SPACE << "RETURN ";
-		lhs->print_ast(file_buffer);
-		// file_buffer<<"\n";
-	}
-	file_buffer<<endl<<endl;
-	
+	file_buffer << "\n" << AST_SPACE << "Return <NOTHING>\n";
 }
 
 Eval_Result & Return_Ast::evaluate(Local_Environment & eval_env, ostream & file_buffer)
 {
-	print_ast(file_buffer);
-	proc->return_check=1;
-	if(lhs==NULL){
+	print(file_buffer);
+	Eval_Result & result = *new Eval_Result_Value_Int();
+	return result;
+}
 
-		Eval_Result & result = *new Eval_Result_Value_Int();
-		// result.set_value(-1);
-		return result;
-	}
-	else{ 
-		return lhs->evaluate(eval_env,file_buffer);	
-	}
-	
+Code_For_Ast & Return_Ast::compile()
+{
+	Code_For_Ast & ret_code = *new Code_For_Ast();
+	return ret_code;
+}
+
+Code_For_Ast & Return_Ast::compile_and_optimize_ast(Lra_Outcome & lra)
+{
+	Code_For_Ast & ret_code = *new Code_For_Ast();
+	return ret_code;
 }
 
 template class Number_Ast<int>;
-template class Number_Ast<float>;
-
-////////////////////////////////////////////////////////////////////////////////
-
-Goto_Ast::Goto_Ast(int num)
-{
-	basic_block_number=num;
-}
-
-Goto_Ast::~Goto_Ast()
-{
-	
-}
-
-int Goto_Ast::get_number(){
-	return basic_block_number;
-}
-
-void Goto_Ast::print_ast(ostream & file_buffer)
-{
-	file_buffer <<"\n" << AST_SPACE << "Goto statement:\n";
-	file_buffer << AST_NODE_SPACE<< "Successor: " <<basic_block_number;
-}
-
-Eval_Result & Goto_Ast::evaluate(Local_Environment & eval_env, ostream & file_buffer)
-{
-	print_ast(file_buffer);
-	file_buffer << "\n"<<AST_SPACE << "GOTO (BB "<<basic_block_number<<")";
-	Eval_Result & result = * new Eval_Result_Value_Int();
-	// result.set_value( (int) basic_block_number);
-	result.set_value( basic_block_number);
-	return result;
-}
-/////////////////////////////////////////////////////////////////////////////////
-
-If_Else_Loop_Ast::If_Else_Loop_Ast(Ast * relational_ast_temp,Ast * if_ast_temp,Ast * else_ast_temp)
-{
-	relational_ast = relational_ast_temp;
-	if_ast = if_ast_temp;
-	else_ast = else_ast_temp;
-}
-
-If_Else_Loop_Ast::~If_Else_Loop_Ast()
-{
-	delete relational_ast;
-	delete if_ast;
-	delete else_ast;
-}
-
-void If_Else_Loop_Ast::print_ast(ostream & file_buffer)
-{
-	file_buffer << "\n" << AST_SPACE << "If_Else statement:";	
-	relational_ast->print_ast(file_buffer);	
-	file_buffer <<"\n";
-	file_buffer << AST_NODE_SPACE<<"True Successor: "<<if_ast->get_number()<<"\n";
-	file_buffer << AST_NODE_SPACE<<"False Successor: "<<else_ast->get_number();
-	
-	
-}
-
-Eval_Result & If_Else_Loop_Ast::evaluate(Local_Environment & eval_env, ostream & file_buffer)
-{
-
-	file_buffer << "\n" << AST_SPACE << "If_Else statement:";	
-	relational_ast->print_ast(file_buffer);	
-
-	Eval_Result & result = * new Eval_Result_Value_Int();	
-	
-
-	Eval_Result & eval_relation = relational_ast->evaluate(eval_env, file_buffer);
-
-	file_buffer <<"\n";
-	file_buffer << AST_NODE_SPACE<<"True Successor: "<<if_ast->get_number()<<"\n";
-	file_buffer << AST_NODE_SPACE<<"False Successor: "<<else_ast->get_number();
-
-	if(eval_relation.get_value()){
-		file_buffer << "\n"<<AST_SPACE << "Condition True : Goto (BB "<< if_ast->get_number() <<")";
-		//if_ast->print_value(eval_env, file_buffer);
-		result.set_value(if_ast->get_number());
-		return result;
-	}
-	else{
-		file_buffer<< "\n"<<AST_SPACE << "Condition False : Goto (BB "<< else_ast->get_number() <<")";
-		//else_ast->print_value(eval_env, file_buffer);
-		result.set_value(else_ast->get_number());
-		return result;
-	}
-}
-
-/////////////////////////////////////////////////////////////////////////////////
-
-Assignment_Ast::Assignment_Ast(Ast * temp_lhs, Ast * temp_rhs)
-{
-	lhs = temp_lhs;
-	rhs = temp_rhs;
-}
-
-Assignment_Ast::~Assignment_Ast()
-{
-	delete lhs;
-	delete rhs;
-}
-
-Data_Type Assignment_Ast::get_data_type()
-{
-	return node_data_type;
-}
-
-bool Assignment_Ast::check_ast(int line)
-{
-	if (lhs->get_data_type() == rhs->get_data_type())
-	{		
-		node_data_type = lhs->get_data_type();
-		return true;
-	}
-	
-
-	report_error("Assignment statement data type not compatible", line);
-}
-
-void Assignment_Ast::print_ast(ostream & file_buffer)
-{
-	file_buffer <<"\n" << AST_SPACE << "Asgn:\n";
-
-	file_buffer << AST_NODE_SPACE<<"LHS (";
-	lhs->print_ast(file_buffer);
-	file_buffer << ")\n";
-
-	file_buffer << AST_NODE_SPACE << "RHS (";
-	rhs->print_ast(file_buffer);
-	file_buffer << ")";
-}
-
-Eval_Result & Assignment_Ast::evaluate(Local_Environment & eval_env, ostream & file_buffer)
-{
-	//cout<<"assign eval 1\n";
-
-	//rhs->print_ast(file_buffer);
-	Eval_Result & final = *new Eval_Result_Value_Int();
-
-	Eval_Result & result = rhs->evaluate(eval_env, file_buffer);
-
-	//cout<<"assign eval 2\n";
-
-	if (result.is_variable_defined() == false){
-		report_error("Variable should be defined to be on rhs", NOLINE);
-	}
-
-	//cout<<"assign eval 3\n";
-
-	lhs->set_value_of_evaluation(eval_env, result);
-
-	//cout<<"assign eval 4\n";
-	// Print the result
-
-
-	print_ast(file_buffer);
-
-	file_buffer << "\n";
-
-	lhs->print_value(eval_env, file_buffer);
-
-	// file_buffer << "\n";
-
-
-	final.set_value(0);
-
-	return final;
-}
-/////////////////////////////////////////////////////////////////
-
-Relational_Expr_Ast::Relational_Expr_Ast(Ast * temp_lhs, Ast * temp_rhs , string temp_op)
-{
-	lhs = temp_lhs;
-	rhs = temp_rhs;
-	op= temp_op;
-}
-
-Relational_Expr_Ast::~Relational_Expr_Ast()
-{
-	delete lhs;
-	delete rhs;
-}
-
-Data_Type Relational_Expr_Ast::get_data_type()
-{
-	return int_data_type;
-}
-
-bool Relational_Expr_Ast::check_ast(int line)
-{
-	if(rhs==NULL)
-	{
-		node_data_type = lhs->get_data_type();
-		return true;
-	}
-	//if (lhs->get_data_type() == rhs->get_data_type())
-	
-	node_data_type = lhs->get_data_type();
-	return true;
-	
-
-	//report_error("Relational statement data type not compatible", line);
-}
-
-void Relational_Expr_Ast::print_ast(ostream & file_buffer)
-{
-	file_buffer<< "\n" << AST_NODE_SPACE<<"Condition: "<<op <<"\n";
-
-	file_buffer << AST_NODE_SPACE << "   LHS (";
-	lhs->print_ast(file_buffer);
-	file_buffer << ")";
-
-	if(rhs!=NULL)
-	{
-		file_buffer<<"\n"<< AST_NODE_SPACE << "   RHS (";
-		rhs->print_ast(file_buffer);
-		file_buffer << ")";
-	}
-}
-
-Eval_Result & Relational_Expr_Ast::evaluate(Local_Environment & eval_env, ostream & file_buffer)
-{
-	Eval_Result & result_lhs = lhs->evaluate(eval_env, file_buffer);
-	Eval_Result & result_rhs = rhs->evaluate(eval_env, file_buffer);
-
-	Eval_Result & result = * new Eval_Result_Value_Int();
-
-	if(op == "LT")
-	{
-		if(result_lhs.get_value() < result_rhs.get_value())result.set_value(1);			
-		else result.set_value(0);
-	} 
-	else if(op == "GT") 
-	{
-		if(result_lhs.get_value() > result_rhs.get_value())result.set_value(1);			
-		else result.set_value(0);
-	} 
-	else if(op == "LE")
-	{
-		if(result_lhs.get_value() <= result_rhs.get_value())result.set_value(1);			
-		else result.set_value(0);
-	} 
-	else if(op == "GE")
-	{
-		if(result_lhs.get_value() >= result_rhs.get_value())result.set_value(1);			
-		else result.set_value(0);
-	} 
-	else if(op == "EQ")
-	{
-		if(result_lhs.get_value() == result_rhs.get_value())result.set_value(1);			
-		else result.set_value(0);
-	} 
-	else if(op == "NE")
-	{
-		if(result_lhs.get_value() != result_rhs.get_value())result.set_value(1);			
-		else result.set_value(0);
-	} 
-
-	return result;
-		
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////
-
-Arith_Expr_Ast::Arith_Expr_Ast(Ast * temp_lhs, Ast * temp_rhs , string temp_op)
-{
-	lhs = temp_lhs;
-	rhs = temp_rhs;
-	op= temp_op;
-}
-
-Arith_Expr_Ast::~Arith_Expr_Ast()
-{
-	delete lhs;
-	delete rhs;
-}
-
-Data_Type Arith_Expr_Ast::get_data_type()
-{
-	return node_data_type;
-}
-
-bool Arith_Expr_Ast::check_ast(int line)
-{
-	
-	if (lhs->get_data_type() == rhs->get_data_type())
-	{
-		node_data_type = lhs->get_data_type();
-		return true;
-	}
-
-	report_error("Arithmetic statement data type not compatible", line);
-}
-
-void Arith_Expr_Ast::print_ast(ostream & file_buffer)
-{
-	file_buffer<< "\n" << AST_NODE_SPACE<<"Arith: "<<op <<"\n";
-
-	file_buffer << AST_NODE_SPACE << "   LHS (";
-	lhs->print_ast(file_buffer);
-	file_buffer << ")";
-
-	if(rhs!=NULL)
-	{
-		file_buffer<<"\n" << AST_NODE_SPACE << "   RHS (";
-		rhs->print_ast(file_buffer);
-		file_buffer << ")";
-	}
-}
-
-Eval_Result & Arith_Expr_Ast::evaluate(Local_Environment & eval_env, ostream & file_buffer)
-{
-	Eval_Result & result_lhs = lhs->evaluate(eval_env, file_buffer);
-	Eval_Result & result_rhs = rhs->evaluate(eval_env, file_buffer);
-	
-	Eval_Result & int_result = * new Eval_Result_Value_Int();
-	Eval_Result & float_result = * new Eval_Result_Value_Float();
-
-	if( (lhs->get_data_type() == int_data_type) && (rhs->get_data_type() == int_data_type) )
-	{
-		if(op == "PLUS")
-		{
-			int_result.set_value(  (result_lhs.get_value()+result_rhs.get_value()) ) ;
-		} 
-		else if(op == "MINUS") 
-		{
-			int_result.set_value(  (result_lhs.get_value()-result_rhs.get_value()) ) ;
-		} 
-		else if(op == "MULT")
-		{
-			int_result.set_value(  (result_lhs.get_value() * result_rhs.get_value()) ) ;
-		}
-		else if(op == "DIV")
-		{
-			int_result.set_value(  (result_lhs.get_value() / result_rhs.get_value()) ) ;
-		} 
-		return int_result;
-	}
-	else
-	{
-		if(op == "PLUS")
-		{
-			float_result.set_value( result_lhs.get_value()+result_rhs.get_value() ) ;
-		} 
-		else if(op == "MINUS") 
-		{
-			float_result.set_value( result_lhs.get_value()-result_rhs.get_value() ) ;
-		} 
-		else if(op == "MULT")
-		{
-			float_result.set_value( result_lhs.get_value() * result_rhs.get_value() ) ;
-		}
-		else if(op == "DIV")
-		{
-			float_result.set_value( result_lhs.get_value() / result_rhs.get_value() ) ;
-		} 
-		return float_result;
-	}	
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////
-
-Typecast_Expr_Ast::Typecast_Expr_Ast(Ast * temp_lhs , string temp_op)
-{
-	lhs = temp_lhs;
-	type=temp_op;
-}
-
-Typecast_Expr_Ast::~Typecast_Expr_Ast()
-{
-	delete lhs;
-}
-
-Data_Type Typecast_Expr_Ast::get_data_type()
-{
-	if(type=="integer")return int_data_type;
-	else return float_data_type;
-}
-
-void Typecast_Expr_Ast::print_ast(ostream & file_buffer)
-{
-	//file_buffer<< "\n" << AST_NODE_SPACE<<"Arith: "<<op <<"\n";
-
-	//file_buffer << AST_NODE_SPACE << "   LHS (";
-	lhs->print_ast(file_buffer);
-	//file_buffer << ")\n";
-
-}
-
-Eval_Result & Typecast_Expr_Ast::evaluate(Local_Environment & eval_env, ostream & file_buffer)
-{
-	Eval_Result & result_lhs = lhs->evaluate(eval_env, file_buffer);
-
-	Eval_Result & int_result = * new Eval_Result_Value_Int();
-	Eval_Result & float_result = * new Eval_Result_Value_Float();
-
-	if(this->get_data_type() == int_data_type) 
-	{
-//		int_result.set_value( (int) result_lhs.get_value() );
-		int_result.set_value( result_lhs.get_value() );
-		return int_result;
-	}
-
-	else if(this->get_data_type() == float_data_type)
-	{
-		float_result.set_value( result_lhs.get_value() );
-		return float_result;
-	} 
-	
-		
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////
-
-Unary_Expr_Ast::Unary_Expr_Ast(Ast * temp_lhs)
-{
-	lhs = temp_lhs;
-}
-
-Unary_Expr_Ast::~Unary_Expr_Ast()
-{
-	delete lhs;
-}
-
-Data_Type Unary_Expr_Ast::get_data_type()
-{
-	return lhs->get_data_type();
-}
-
-void Unary_Expr_Ast::print_ast(ostream & file_buffer)
-{
-	file_buffer<< "\n" << AST_NODE_SPACE<<"Arith: UMINUS" <<"\n";
-
-	file_buffer << AST_NODE_SPACE << "   LHS (";
-	lhs->print_ast(file_buffer);
-	file_buffer << ")";
-}
-
-Eval_Result & Unary_Expr_Ast::evaluate(Local_Environment & eval_env, ostream & file_buffer)
-{
-	Eval_Result & result_lhs = lhs->evaluate(eval_env, file_buffer);
-
-	Eval_Result & int_result = * new Eval_Result_Value_Int();
-	Eval_Result & float_result = * new Eval_Result_Value_Float();
-
-	if(lhs->get_data_type() == int_data_type){		
-		// int_result.set_value( (int) (-1 * result_lhs.get_value()) );
-		int_result.set_value(-1 * result_lhs.get_value());
-		return int_result;
-	}
-
-	else if(lhs->get_data_type() == float_data_type)
-	{
-		float_result.set_value( -1 * result_lhs.get_value() );
-		return float_result;
-	}
-}
-
-
-////////////////////////////////////////////////////////////////////////////////////////////
-
-Fn_Call_Ast::Fn_Call_Ast(Procedure * temp_proc, list<Ast *> * ast_list)
-{
-	proc = temp_proc;
-	if(ast_list==NULL) var_list = new list<Ast *>;
-	else var_list  = ast_list;
-}
-
-Fn_Call_Ast::~Fn_Call_Ast()
-{
-	delete proc;
-	delete var_list;
-}
-
-Data_Type Fn_Call_Ast::get_data_type()
-{
-	return proc->get_return_type();
-}
-
-void Fn_Call_Ast::print_ast(ostream & file_buffer)
-{
-
-	file_buffer << "\n" << AST_SPACE << "FN CALL: ";
-	file_buffer << proc->get_proc_name() <<"(";
-	
-	if(var_list!=NULL){
-		list<Ast *>::iterator i;
-		for (i = var_list->begin(); i != var_list->end(); i++)
-		{
-			file_buffer <<"\n";
-			file_buffer << AST_NODE_SPACE;
-			(*i)->print_ast(file_buffer);
-		}
-	}
-
-	file_buffer << ")";
-}
-
-Eval_Result & Fn_Call_Ast::evaluate(Local_Environment & eval_env, ostream & file_buffer)
-{
-	// cout<<"Size of var_list : "<<(var_list->get_symbol_table())->size()<<"  Size of params list : "<<((proc->get_params_list())->get_symbol_table()).size()<<endl;
-
-	list<Eval_Result_Value *> eval_result_list;
-
-	list<Ast *>::iterator j;
-   	for ( j = var_list->begin(); j != var_list->end();j++)
-   	{		
-
-   		Eval_Result & r = ((*j)->evaluate(eval_env, file_buffer));
-
-   		if( !r.is_variable_defined() )
-		{
-			report_error(" Variable should be defined before its use",NOLINE);
-		}
-
-		if(r.get_result_enum()==int_result)
-		{
-			Eval_Result_Value_Int * j = new Eval_Result_Value_Int();
-			j->set_value(r.get_value());
-			eval_result_list.push_back(j);
-		}
-		else if(r.get_result_enum()==float_result)
-		{
-			Eval_Result_Value_Float * j = new Eval_Result_Value_Float();
-			j->set_value(r.get_value());			
-			eval_result_list.push_back(j);
-		}
-   	}
-
-	Eval_Result & result = proc->evaluate(file_buffer,eval_result_list);
-	proc->return_check=0;
-	return result;
-}

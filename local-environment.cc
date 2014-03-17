@@ -8,72 +8,75 @@
 
            Implemented   by  Tanu  Kanvar (tanu@cse.iitb.ac.in) and Uday
            Khedker    (http://www.cse.iitb.ac.in/~uday)  for the courses
-           cs302+cs306: Language  Processors (theory and lab)  at IIT
+           cs302+cs306: Language  Processors  (theory and  lab)  at  IIT
            Bombay.
 
-           Release  date Jan  15, 2013.  Copyrights reserved  by Uday
-           Khedker. This implemenation has been made available purely
+           Release  date  Jan  15, 2013.  Copyrights  reserved  by  Uday
+           Khedker. This  implemenation  has been made  available purely
            for academic purposes without any warranty of any kind.
 
-           Documentation  (functionality,   manual, and  design)  and
-           related tools are at http://www.cse.iitb.ac.in/~uday/cfglp
+           Documentation (functionality, manual, and design) and related
+           tools are  available at http://www.cse.iitb.ac.in/~uday/cfglp
 
 
 ***********************************************************************************************/
 
 #include<string>
 #include<fstream>
-#include<iomanip>
+#include<typeinfo>
+
 using namespace std;
 
+#include"common-classes.hh"
 #include"local-environment.hh"
 #include"error-display.hh"
 #include"user-options.hh"
 
-double Eval_Result::get_value()
+int Eval_Result::get_int_value()
 {
-	report_internal_error("Should not reach, Eval_Result : get_value");
+	stringstream msg;
+	msg << "No get_value() function for " << typeid(*this).name();
+	CHECK_INVARIANT(CONTROL_SHOULD_NOT_REACH, msg.str());
 }
 
-// void Eval_Result::set_value(int number)
-// {
-// 	report_internal_error("Should not reach, Eval_Result : set_value");
-// }
-
-void Eval_Result::set_value(double number)
+void Eval_Result::set_value(int number)
 {
-	report_internal_error("Should not reach, Eval_Result : set_value");
+	stringstream msg;
+	msg << "The set_value(int) function for " << typeid(*this).name();
+	CHECK_INVARIANT(CONTROL_SHOULD_NOT_REACH, msg.str());
 }
-
 
 bool Eval_Result::is_variable_defined()
 {
-	report_internal_error("Should not reach, Eval_Result : is_variable_defined");
+	stringstream msg;
+	msg << "No is_variable_defined() function for " << typeid(*this).name();
+	CHECK_INVARIANT(CONTROL_SHOULD_NOT_REACH, msg.str());
 }
 
 void Eval_Result::set_variable_status(bool def)
 {
-	report_internal_error("Should not reach, Eval_Result : set_variable_status");
-}
-///////////////////////////////////////////////////////////////////////////////
-
-// void Eval_Result_Value::set_value(int number)
-// {
-// 	report_internal_error("Should not reach, Eval_Result : set_value");
-// }
-
-void Eval_Result_Value::set_value(double number)
-{
-	//cout<<"akajshdkj  :: "<<number<<endl;
-	report_internal_error("Should not reach, Eval_Result : set_value");
-}
-
-double Eval_Result_Value::get_value()
-{
-	report_internal_error("Should not reach, Eval_Result : get_value");
+	stringstream msg;
+	msg << "No set_variable_status() function for " << typeid(*this).name();
+	CHECK_INVARIANT(CONTROL_SHOULD_NOT_REACH, msg.str());
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+
+void Eval_Result_Value::set_value(int value)
+{
+	stringstream msg;
+	msg << "No set_value() fucntion for " << typeid(*this).name();
+	CHECK_INVARIANT(CONTROL_SHOULD_NOT_REACH, msg.str());
+}
+
+int Eval_Result_Value::get_int_value()
+{
+	stringstream msg;
+	msg << "No get_value() function for " << typeid(*this).name();
+	CHECK_INVARIANT(CONTROL_SHOULD_NOT_REACH, msg.str());
+}
+
+//////////////////////////////////////////////////////////////////////////////
 
 Eval_Result_Value_Int::Eval_Result_Value_Int()
 {
@@ -85,13 +88,13 @@ Eval_Result_Value_Int::Eval_Result_Value_Int()
 Eval_Result_Value_Int::~Eval_Result_Value_Int()
 { }
 
-void Eval_Result_Value_Int::set_value(double number)
+void Eval_Result_Value_Int::set_value(int number)
 {
 	value = number;
 	defined = true;
 }
 
-double Eval_Result_Value_Int::get_value()
+int Eval_Result_Value_Int::get_int_value()
 {
 	return value;
 }
@@ -116,49 +119,6 @@ Result_Enum Eval_Result_Value_Int::get_result_enum()
 	return result_type;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-
-Eval_Result_Value_Float::Eval_Result_Value_Float()
-{
-	value = 0;
-	defined = false;
-	result_type = float_result;
-}
-
-Eval_Result_Value_Float::~Eval_Result_Value_Float()
-{ }
-
-void Eval_Result_Value_Float::set_value(double number)
-{
-	value = number;
-	defined = true;
-}
-
-double Eval_Result_Value_Float::get_value()
-{
-	return value;
-}
-
-void Eval_Result_Value_Float::set_variable_status(bool def)
-{
-	defined = def;
-}
-
-bool Eval_Result_Value_Float::is_variable_defined()
-{
-	return defined;
-}
-
-void Eval_Result_Value_Float::set_result_enum(Result_Enum res)
-{
-	result_type = res;
-}
-
-Result_Enum Eval_Result_Value_Float::get_result_enum()
-{
-	return result_type;
-}
-
 ///////////////////////////////////////////////////////////////////////////////////
 
 Local_Environment::Local_Environment()
@@ -169,59 +129,58 @@ Local_Environment::~Local_Environment()
 
 void Local_Environment::print(ostream & file_buffer)
 {
-	map<string, Eval_Result_Value *>::iterator i;
+	map<string, Eval_Result *>::iterator i;
 	for (i = variable_table.begin(); i != variable_table.end(); i++)
 	{
-		Eval_Result_Value * vi = variable_table[(*i).first];
-	
-		// cout<<"\n :::::::::::    ::::::  " << (*i).first << vi->get_result_enum() <<endl;
-
-		if (vi != NULL)
+		if (variable_table.find((*i).first) != variable_table.end())
 		{
-			file_buffer<<endl;
-			
+			Eval_Result * vi = variable_table[(*i).first];
+
+			if (vi == NULL)
+				continue;
+
 			if (vi->is_variable_defined() == false)
-			{				
-				file_buffer << VAR_SPACE << (*i).first << " : undefined";
-			}
+				file_buffer << VAR_SPACE << (*i).first << " : undefined" << "\n";
 		
 			else
 			{
-				if(vi->get_result_enum()==float_result){
-					file_buffer << VAR_SPACE << (*i).first << " : " <<fixed<<setprecision(2)<< vi->get_value();
-				}
-				else if(vi->get_result_enum()==int_result){
-					file_buffer << VAR_SPACE << (*i).first << " : " <<fixed<<setprecision(0)<<vi->get_value();
-				}
+				if (vi->get_result_enum() == int_result)
+					file_buffer << VAR_SPACE << (*i).first << " : " << vi->get_int_value() << "\n";
 			}
 		}
 	}
-
 }
 
 bool Local_Environment::is_variable_defined(string name)
 {
-	Eval_Result_Value * i = variable_table[name];
-	if (i != NULL)
+	if (variable_table.find(name) != variable_table.end())
+	{
+		Eval_Result * i = variable_table[name];
 		return i->is_variable_defined();
+	}
 	else
 		return false;
 }
 
-Eval_Result_Value * Local_Environment::get_variable_value(string name)
+Eval_Result * Local_Environment::get_variable_value(string name)
 {
-	Eval_Result_Value * i = variable_table[name];
-	return i;
+	if (variable_table.find(name) != variable_table.end())
+	{
+		Eval_Result * i = variable_table[name];
+		return i;
+	}
+
+	return NULL;
 }
 
-void Local_Environment::put_variable_value(Eval_Result_Value & i, string name)
+void Local_Environment::put_variable_value(Eval_Result & i, string name)
 {
 	variable_table[name] = &i;
 }
 
 bool Local_Environment::does_variable_exist(string name)
 {
-	if (variable_table[name] == NULL)
+	if (variable_table.find(name) == variable_table.end())
 		return false;
 	else
 		return true;
