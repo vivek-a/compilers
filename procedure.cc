@@ -89,7 +89,7 @@ void Procedure::print(ostream & file_buffer)
 {
 	CHECK_INVARIANT((return_type == void_data_type), "Only void return type of funtion is allowed");
 
-	file_buffer << PROC_SPACE << "Procedure: " << name << ", Return Type: void\n\n";
+	file_buffer << PROC_SPACE << "Procedure: " << name << ", Return Type: void\n";
 
 	if ((command_options.is_show_symtab_selected()) || (command_options.is_show_program_selected()))
 	{
@@ -145,9 +145,26 @@ Eval_Result & Procedure::evaluate(ostream & file_buffer)
 	
 	Basic_Block * current_bb = &(get_start_basic_block());
 	while (current_bb)
-	{
-		result = &(current_bb->evaluate(eval_env, file_buffer));
-		current_bb = get_next_bb(*current_bb);		
+	{		
+		if(   (current_bb->statement_list).size() == 0)
+		{
+			file_buffer<<"\n"<<"      Basic Block: "<<current_bb->get_bb_number();
+			current_bb = get_next_bb(*current_bb);
+		}
+		else
+		{
+			result = &(current_bb->evaluate(eval_env, file_buffer));
+			if(result->get_int_value() == 0)
+				current_bb = get_next_bb(*current_bb);
+			else if(result->get_int_value() == -1)
+				break;
+			else 				
+				for(list<Basic_Block *>::iterator i = basic_block_list.begin(); i != basic_block_list.end(); i++)
+				{
+					if( (*i)->get_bb_number() == result->get_int_value())
+						current_bb = *i;		
+				}			
+		}
 	}
 
 	file_buffer << "\n\n";

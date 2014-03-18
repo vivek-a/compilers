@@ -43,7 +43,10 @@
 %token <integer_value> INTEGER_NUMBER BBNUM
 %token <string_value> NAME
 %token RETURN INTEGER IF ELSE GOTO
-%token ASSIGN
+%token ASSIGN 
+
+%left NE,EQ
+%left LT,LE,GT,GE
 
 %type <symbol_table> optional_variable_declaration_list
 %type <symbol_table> variable_declaration_list
@@ -56,6 +59,10 @@
 %type <ast> assignment_statement
 %type <ast> variable
 %type <ast> constant
+%type <ast> goto_stmt
+%type <ast> if_else_stmt
+%type <ast> relational_expression
+%type <ast> expression
 
 %start program
 
@@ -345,7 +352,6 @@ executable_statement_list:
 		if (NOT_ONLY_PARSE)
 		{
 			list<Ast *> * assign_list = $1;
-			Ast * ret = new Return_Ast(get_line_number());
 			list<Ast *> * exe_list = NULL;
 
 			if (assign_list)
@@ -354,7 +360,7 @@ executable_statement_list:
 			else
 				exe_list = new list<Ast *>;
 
-			exe_list->push_back(ret);
+			exe_list->push_back($2);
 
 			$$ = exe_list;
 		}
@@ -365,7 +371,6 @@ executable_statement_list:
 		if (NOT_ONLY_PARSE)
 		{
 			list<Ast *> * assign_list = $1;
-			Ast * ret = new Return_Ast(get_line_number());
 			list<Ast *> * exe_list = NULL;
 
 			if (assign_list)
@@ -374,19 +379,41 @@ executable_statement_list:
 			else
 				exe_list = new list<Ast *>;
 
-			exe_list->push_back(ret);
+			exe_list->push_back($2);
 
 			$$ = exe_list;
 		}
 	}
 ;
 
+if_else_stmt:
+	IF '(' relational_expression ')'  goto_stmt  ELSE goto_stmt
+	{		
+		if (NOT_ONLY_PARSE)
+		{
+			int line = get_line_number();
+			$$ = new if_else_stmt($3,$5,$7,line);
+		}
+	}
+;
+
+goto_stmt:
+	GOTO BBNUM ';'
+	{
+		if (NOT_ONLY_PARSE)
+		{
+			int line = get_line_number();
+			$$ = new goto_stmt($2,line);
+		}
+	}
+;
+
 assignment_statement_list:
 	{
-	if (NOT_ONLY_PARSE)
-	{
-		$$ = NULL;
-	}
+		if (NOT_ONLY_PARSE)
+		{
+			$$ = NULL;
+		}
 	}
 |
 	assignment_statement_list assignment_statement
@@ -413,78 +440,123 @@ assignment_statement_list:
 ;
 
 assignment_statement:
-	variable ASSIGN variable ';'
+	variable ASSIGN relational_expression ';'
 	{
-	if (NOT_ONLY_PARSE)
-	{
-		CHECK_INVARIANT((($1 != NULL) && ($3 != NULL)), "lhs/rhs cannot be null");
+		if (NOT_ONLY_PARSE)
+		{
+			CHECK_INVARIANT((($1 != NULL) && ($3 != NULL)), "lhs/rhs cannot be null");
 
-		Ast * lhs = $1;
-		Ast * rhs = $3;
+			Ast * lhs = $1;
+			Ast * rhs = $3;
 
-		Ast * assign = new Assignment_Ast(lhs, rhs, get_line_number());
+			Ast * assign = new Assignment_Ast(lhs, rhs, get_line_number());
 
-		assign->check_ast();
+			assign->check_ast();
 
-		$$ = assign;
-	}
-	}
-|
-	variable ASSIGN constant ';'
-	{
-	if (NOT_ONLY_PARSE)
-	{
-		CHECK_INVARIANT((($1 != NULL) && ($3 != NULL)), "lhs/rhs cannot be null");
-
-		Ast * lhs = $1;
-		Ast * rhs = $3;
-
-		Ast * assign = new Assignment_Ast(lhs, rhs, get_line_number());
-
-		assign->check_ast();
-
-		$$ = assign;
-	}
+			$$ = assign;
+		}
 	}
 ;
+
+relational_expression:
+	relational_expression EQ relational_expression 
+	{
+		int line = get_line_number();
+		$$ = new Relational_Expr_Ast($1,$3,"EQ",line);
+		
+	}
+|
+	relational_expression NE relational_expression 
+	{
+		int line = get_line_number();
+		$$ = new Relational_Expr_Ast($1,$3,"NE",line);
+	}
+|
+	relational_expression LT relational_expression 
+	{
+		int line = get_line_number();		
+		$$ = new Relational_Expr_Ast($1,$3,"LT",line);		
+	}
+|
+	relational_expression LE relational_expression 
+	{
+		int line = get_line_number();
+		$$ = new Relational_Expr_Ast($1,$3,"LE",line);		
+	}
+|
+	relational_expression GT relational_expression 
+	{
+		int line = get_line_number();
+		$$ = new Relational_Expr_Ast($1,$3,"GT",line);
+	}
+|
+	relational_expression GE relational_expression
+	{
+		int line = get_line_number();
+		$$ = new Relational_Expr_Ast($1,$3,"GE",line);
+	}
+|	
+	expression
+	{
+		$$=$1;
+	}
+;
+
+expression:
+	variable
+	{
+		$$=$1;
+	}
+|
+	constant
+	{
+		$$=$1;
+	}
+|
+	'(' relational_expression')'
+	{
+		$$=$2;
+	}
+;
+
 
 variable:
 	NAME
 	{
-	if (NOT_ONLY_PARSE)
-	{
-		Symbol_Table_Entry * var_table_entry;
+		if (NOT_ONLY_PARSE)
+		{
+			Symbol_Table_Entry * var_table_entry;
 
-		CHECK_INVARIANT(($1 != NULL), "Variable name cannot be null");
+			CHECK_INVARIANT(($1 != NULL), "Variable name cannot be null");
 
-		string var_name = *$1;
+			string var_name = *$1;
 
-		if (current_procedure->variable_in_symbol_list_check(var_name) == true)
-			 var_table_entry = &(current_procedure->get_symbol_table_entry(var_name));
+			if (current_procedure->variable_in_symbol_list_check(var_name) == true)
+				 var_table_entry = &(current_procedure->get_symbol_table_entry(var_name));
 
-		else if (program_object.variable_in_symbol_list_check(var_name) == true)
-			var_table_entry = &(program_object.get_symbol_table_entry(var_name));
+			else if (program_object.variable_in_symbol_list_check(var_name) == true)
+				var_table_entry = &(program_object.get_symbol_table_entry(var_name));
 
-		else
-			CHECK_INVARIANT(CONTROL_SHOULD_NOT_REACH, "Variable has not been declared");
+			else
+				CHECK_INVARIANT(CONTROL_SHOULD_NOT_REACH, "Variable has not been declared");
 
-		Ast * name_ast = new Name_Ast(var_name, *var_table_entry, get_line_number());
+			Ast * name_ast = new Name_Ast(var_name, *var_table_entry, get_line_number());
 
-		$$ = name_ast;
-	}
+			$$ = name_ast;
+		}
 	}
 ;
 
 constant:
 	INTEGER_NUMBER
 	{
-	if (NOT_ONLY_PARSE)
-	{
-		int num = $1;
+		if (NOT_ONLY_PARSE)
+		{
+			int num = $1;
 
-		Ast * num_ast = new Number_Ast<int>(num, int_data_type, get_line_number());
+			Ast * num_ast = new Number_Ast<int>(num, int_data_type, get_line_number());
 
-		$$ = num_ast;
-	}
+			$$ = num_ast;
+		}
 	}
 ;

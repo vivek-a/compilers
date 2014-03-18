@@ -37,13 +37,15 @@ class Basic_Block;
 class Basic_Block
 {
 	int id_number;
-	list<Ast *> statement_list;
 
 	list<Icode_Stmt *> bb_icode_list;
 
 	int lineno;
 
 public:
+
+	list<Ast *> statement_list;
+
 	Basic_Block(int basic_block_number, int line);
 	~Basic_Block();
 

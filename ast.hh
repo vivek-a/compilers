@@ -50,7 +50,7 @@ protected:
 
 	Data_Type node_data_type;
 	Ast_Arity ast_num_child;
-
+	int BBnum;
 	int lineno;
 
 public:
@@ -60,6 +60,7 @@ public:
 	virtual Data_Type get_data_type();
 	virtual bool check_ast();
 	virtual Symbol_Table_Entry & get_symbol_entry();
+	int get_BBnum();
 
 	virtual void print(ostream & file_buffer) = 0;
 	virtual void print_value(Local_Environment & eval_env, ostream & file_buffer);
@@ -151,40 +152,54 @@ public:
 
 class goto_stmt:public Ast
 {
-	int BBnum;
 
 public:
-	goto_stmt(int line);
+	goto_stmt(int temp_BBnum,int line);
 	~goto_stmt();
 
-	bool check_ast();
-
 	void print(ostream & file_buffer);
-
+	int get_BBnum();
 	Eval_Result & evaluate(Local_Environment & eval_env, ostream & file_buffer);
 
-	Code_For_Ast & compile();
-	Code_For_Ast & compile_and_optimize_ast(Lra_Outcome & lra);
+	Code_For_Ast & compile(){}
+	Code_For_Ast & compile_and_optimize_ast(Lra_Outcome & lra){}
 };
 
 class if_else_stmt:public Ast
 {
+	Ast * rel_expr;
 	Ast * lhs;
 	Ast * rhs;
 
 public:
-	if_else_stmt(Ast * temp_lhs, Ast * temp_rhs, int line);
+	if_else_stmt(Ast * temp_rel_expr,Ast * temp_lhs  , Ast * temp_rhs , int line);
 	~if_else_stmt();
-
-	bool check_ast();
 
 	void print(ostream & file_buffer);
 
 	Eval_Result & evaluate(Local_Environment & eval_env, ostream & file_buffer);
 
-	Code_For_Ast & compile();
-	Code_For_Ast & compile_and_optimize_ast(Lra_Outcome & lra);
+	Code_For_Ast & compile(){}
+	Code_For_Ast & compile_and_optimize_ast(Lra_Outcome & lra){}
 };
 
+class Relational_Expr_Ast:public Ast
+{
+	Ast * lhs;
+	Ast * rhs;
+	string op;
+
+public:
+	Relational_Expr_Ast(Ast * temp_lhs, Ast * temp_rhs , string temp_op, int line);
+	~Relational_Expr_Ast();
+
+	void print(ostream & file_buffer);
+
+	Eval_Result & evaluate(Local_Environment & eval_env, ostream & file_buffer);
+	Data_Type get_data_type();
+
+	Code_For_Ast & compile(){}
+	Code_For_Ast & compile_and_optimize_ast(Lra_Outcome & lra){}
+};
 
 #endif

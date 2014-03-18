@@ -52,6 +52,11 @@ bool Ast::check_ast()
 	CHECK_INVARIANT(CONTROL_SHOULD_NOT_REACH, msg.str());
 }
 
+int Ast::get_BBnum()
+{
+	return BBnum;
+}
+
 Data_Type Ast::get_data_type()
 {
 	stringstream msg;
@@ -158,7 +163,10 @@ Eval_Result & Assignment_Ast::evaluate(Local_Environment & eval_env, ostream & f
 
 	lhs->print_value(eval_env, file_buffer);
 
-	return result;
+	Eval_Result & final = *new  Eval_Result_Value_Int();
+	final.set_value(0);
+
+	return final;
 }
 
 Code_For_Ast & Assignment_Ast::compile()
@@ -497,6 +505,7 @@ Eval_Result & Return_Ast::evaluate(Local_Environment & eval_env, ostream & file_
 {
 	print(file_buffer);
 	Eval_Result & result = *new Eval_Result_Value_Int();
+	result.set_value(-1);
 	return result;
 }
 
@@ -513,3 +522,181 @@ Code_For_Ast & Return_Ast::compile_and_optimize_ast(Lra_Outcome & lra)
 }
 
 template class Number_Ast<int>;
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+goto_stmt::goto_stmt(int temp_BBnum, int line)
+{
+	BBnum = temp_BBnum;
+
+	ast_num_child = zero_arity;;
+	node_data_type = void_data_type;
+
+	lineno = line;
+}
+
+goto_stmt::~goto_stmt()
+{
+}
+
+int goto_stmt::get_BBnum()
+{
+	return BBnum;
+}
+
+void goto_stmt::print(ostream & file_buffer)
+{
+	file_buffer << "\n" << AST_SPACE << "Goto statement:\n";
+	file_buffer<<AST_NODE_SPACE<<"Successor: "<<BBnum;
+	// file_buffer << "\n" << AST_NODE_SPACE << "LHS (";
+	// lhs->print(file_buffer);
+	// file_buffer << ")";
+
+	// file_buffer << "\n" << AST_NODE_SPACE << "RHS (";
+	// rhs->print(file_buffer);
+	// file_buffer << ")";
+}
+
+Eval_Result & goto_stmt::evaluate(Local_Environment & eval_env, ostream & file_buffer)
+{
+	print(file_buffer);
+	file_buffer<<"\n" << AST_SPACE << "GOTO (BB "<<get_BBnum()<<")\n";
+	Eval_Result & result = * new Eval_Result_Value_Int();
+	result.set_value(BBnum);
+	return result;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////
+
+if_else_stmt::if_else_stmt(Ast * temp_rel_expr ,  Ast * temp_lhs  , Ast * temp_rhs  , int line)
+{
+	rel_expr=temp_rel_expr;
+	lhs=temp_lhs;
+	rhs=temp_rhs;
+
+	ast_num_child = binary_arity;
+	node_data_type = void_data_type;
+
+	lineno = line;
+}
+
+if_else_stmt::~if_else_stmt()
+{
+	delete lhs;
+	delete rhs;
+	delete rel_expr;
+}
+
+void if_else_stmt::print(ostream & file_buffer)
+{
+	file_buffer<<"\n" << AST_SPACE << "If_Else statement:";
+	rel_expr->print(file_buffer);	
+	file_buffer <<"\n";
+	file_buffer << AST_NODE_SPACE<<"True Successor: "<<lhs->get_BBnum()<<"\n";
+	file_buffer << AST_NODE_SPACE<<"False Successor: "<<rhs->get_BBnum();
+}
+
+Eval_Result & if_else_stmt::evaluate(Local_Environment & eval_env, ostream & file_buffer)
+{
+
+	print(file_buffer);
+
+	Eval_Result & result = * new Eval_Result_Value_Int();	
+	
+
+	Eval_Result & eval_relation = rel_expr->evaluate(eval_env, file_buffer);
+
+	if(eval_relation.get_int_value()){
+		file_buffer<<"\n" << AST_SPACE << "Condition True : Goto (BB "<< lhs->get_BBnum() <<")\n";
+		//if_ast->print_value(eval_env, file_buffer);
+		result.set_value(lhs->get_BBnum());
+		return result;
+	}
+	else{
+		file_buffer<<"\n"<< AST_SPACE << "Condition False : Goto (BB "<< rhs->get_BBnum() <<")\n";
+		//else_ast->print_value(eval_env, file_buffer);
+		result.set_value(rhs->get_BBnum());
+		return result;
+	}
+}
+
+/////////////////////////////////////////////////////////////////
+
+Relational_Expr_Ast::Relational_Expr_Ast(Ast * temp_lhs, Ast * temp_rhs , string temp_op ,int line)
+{
+	lhs = temp_lhs;
+	rhs = temp_rhs;
+	op= temp_op;
+
+	ast_num_child = binary_arity;
+	node_data_type = int_data_type;
+
+	lineno = line;
+}
+
+Relational_Expr_Ast::~Relational_Expr_Ast()
+{
+	delete lhs;
+	delete rhs;
+}
+
+Data_Type Relational_Expr_Ast::get_data_type()
+{
+	return node_data_type;
+}
+
+void Relational_Expr_Ast::print(ostream & file_buffer)
+{
+	file_buffer<<"\n"<< AST_NODE_SPACE<<"Condition: "<<op <<"\n";
+
+	file_buffer << AST_NODE_SPACE << "   LHS (";
+	lhs->print(file_buffer);
+	file_buffer << ")\n";
+
+	if(rhs!=NULL)
+	{
+		file_buffer << AST_NODE_SPACE << "   RHS (";
+		rhs->print(file_buffer);
+		file_buffer << ")";
+	}
+}
+
+Eval_Result & Relational_Expr_Ast::evaluate(Local_Environment & eval_env, ostream & file_buffer)
+{
+	Eval_Result & result_lhs = lhs->evaluate(eval_env, file_buffer);
+	Eval_Result & result_rhs = rhs->evaluate(eval_env, file_buffer);
+	Eval_Result & result = * new Eval_Result_Value_Int();
+
+	if(op == "LT")
+	{
+		if(result_lhs.get_int_value() < result_rhs.get_int_value())result.set_value(1);			
+		else result.set_value(0);
+	} 
+	else if(op == "GT") 
+	{
+		if(result_lhs.get_int_value() > result_rhs.get_int_value())result.set_value(1);			
+		else result.set_value(0);
+	} 
+	else if(op == "LE")
+	{
+		if(result_lhs.get_int_value() <= result_rhs.get_int_value())result.set_value(1);			
+		else result.set_value(0);
+	} 
+	else if(op == "GE")
+	{
+		if(result_lhs.get_int_value() >= result_rhs.get_int_value())result.set_value(1);			
+		else result.set_value(0);
+	} 
+	else if(op == "EQ")
+	{
+		if(result_lhs.get_int_value() == result_rhs.get_int_value())result.set_value(1);			
+		else result.set_value(0);
+	} 
+	else if(op == "NE")
+	{
+		if(result_lhs.get_int_value() != result_rhs.get_int_value())result.set_value(1);			
+		else result.set_value(0);
+	} 
+	return result;	
+}

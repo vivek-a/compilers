@@ -4,11 +4,11 @@
 rm -rf tmp
 mkdir tmp
 
-# for file in "test_files"/*.c 
-# do
-# 	file=`echo $file | cut -d '/' -f2`
-# 	make -f Makefile.cfg FILE=$file
-# done
+for file in "test_files"/*.c 
+do
+	file=`echo $file | cut -d '/' -f2`
+	make -f Makefile.cfg FILE=$file
+done
 
 echo "\nProcessing correct files"
 echo "-------------------------\n"

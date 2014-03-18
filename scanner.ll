@@ -26,6 +26,40 @@
 
 %%
 
+
+"<"		{
+			store_token_name("LT");
+			return Parser::LT; 
+		}
+
+">"		{
+			store_token_name("GT");
+			return Parser::GT; 
+		}
+
+"<="		{
+			store_token_name("LE");
+			return Parser::LE; 
+		}
+
+">="		{
+			store_token_name("GE");
+			return Parser::GE; 
+		}
+
+"!="		{
+			store_token_name("NE");
+			return Parser::NE; 
+		}
+
+"=="		{
+			store_token_name("EQ");
+			return Parser::EQ; 
+		}
+
+
+
+
 if		{
 			store_token_name("IF");
 			return Parser::IF; 
