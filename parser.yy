@@ -142,6 +142,7 @@ procedure_definition:
 		CHECK_INVARIANT((bb_list != NULL), "Basic block list cannot be null");
 
 		current_procedure->set_basic_block_list(*bb_list);
+		bb_existence_check($8,current_procedure->get_goto_list(),get_line_number());
 	}
 	}
 ;
@@ -404,6 +405,7 @@ goto_stmt:
 		{
 			int line = get_line_number();
 			$$ = new goto_stmt($2,line);
+			current_procedure->add_to_goto_list($2);
 		}
 	}
 ;

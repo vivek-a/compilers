@@ -54,6 +54,15 @@ Procedure::~Procedure()
 		delete (*i);
 }
 
+vector<int> Procedure::get_goto_list()
+{
+	return goto_list;
+}
+
+void Procedure::add_to_goto_list(int num){
+	(this->goto_list).push_back(num);
+}
+
 string Procedure::get_proc_name()
 {
 	return name;

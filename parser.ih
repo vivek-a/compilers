@@ -39,6 +39,40 @@
 #include "program.hh"
 #include "parser.h"
 
+////////////////// Parser bb_existence_check function ////////////////////////
+
+void Parser::bb_existence_check(list<Basic_Block *> * bb_list ,vector<int> goto_list,int line)
+{
+  vector<int> goto_blocks= goto_list;
+
+  int flag,num;
+
+  list<Basic_Block *>::iterator i;  
+
+  for(int j=0;j< goto_blocks.size();j++ ){
+    flag=0;    
+    for(i = bb_list->begin(); i != bb_list->end(); i++)
+    {
+      if ((*i)->get_bb_number() == goto_blocks[j]){
+        flag=1;
+        break;               
+      }
+      num=goto_blocks[j];
+    }
+    
+    if(flag==0)
+    {        
+        int line = get_line_number();
+        string s;
+        s="bb ";
+        s+=to_string(num);
+        s+=" doesn't exist";
+        CHECK_INVARIANT(false,s);
+    }
+  }
+}
+
+
 ////////////////////// cfglp Parser functions ///////////////////////
 
 bool bb_repeat_check(list<Basic_Block *> * bb_list, int bb_number);

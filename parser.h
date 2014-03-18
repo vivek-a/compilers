@@ -79,6 +79,7 @@ class Parser: public ParserBase
         int lex();
 
 	void bb_strictly_increasing_order_check(list<Basic_Block *> * bb_list, int bb_number); 
+	void bb_existence_check(list<Basic_Block *> * bb_list ,vector<int> goto_list,int line);
         
 	void executeAction(int ruleNr);
         void errorRecovery();

@@ -43,10 +43,15 @@ class Procedure
 	list<Basic_Block *> basic_block_list;
 
 	int lineno;
+	vector<int> goto_list;
 
 public:
 	Procedure(Data_Type proc_return_type, string proc_name, int line);
 	~Procedure();
+
+	
+	vector<int> get_goto_list();
+	void add_to_goto_list(int num);
 
 	string get_proc_name();
 	void set_basic_block_list(list<Basic_Block *> & bb_list);
