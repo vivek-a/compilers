@@ -161,7 +161,7 @@ public:
 	int get_BBnum();
 	Eval_Result & evaluate(Local_Environment & eval_env, ostream & file_buffer);
 
-	Code_For_Ast & compile(){}
+	Code_For_Ast & compile();
 	Code_For_Ast & compile_and_optimize_ast(Lra_Outcome & lra){}
 };
 
@@ -179,7 +179,7 @@ public:
 
 	Eval_Result & evaluate(Local_Environment & eval_env, ostream & file_buffer);
 
-	Code_For_Ast & compile(){}
+	Code_For_Ast & compile();
 	Code_For_Ast & compile_and_optimize_ast(Lra_Outcome & lra){}
 };
 
@@ -198,7 +198,7 @@ public:
 	Eval_Result & evaluate(Local_Environment & eval_env, ostream & file_buffer);
 	Data_Type get_data_type();
 
-	Code_For_Ast & compile(){}
+	Code_For_Ast & compile();
 	Code_For_Ast & compile_and_optimize_ast(Lra_Outcome & lra){}
 };
 

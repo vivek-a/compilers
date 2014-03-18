@@ -244,9 +244,9 @@ void Procedure::print_epilogue(ostream & file_buffer)
 	int size = local_symbol_table.get_size();
 
 	if (size > 0)
-		epilogue << "\n# Epilogue Begins\n\tadd $sp, $sp, " << size << "\n";
+		epilogue << "# Epilogue Begins\n\tadd $sp, $sp, " << size << "\n";
 	else
-		epilogue << "\n#Epilogue Begins\n\tadd $sp, $sp, 4\n";
+		epilogue << "#Epilogue Begins\n\tadd $sp, $sp, 4\n";
 
 	epilogue << "\tlw $fp, 0($sp)  \n\tjr        $31\t\t# Jump back to the operating system.\n# Epilogue Ends\n\n";
 

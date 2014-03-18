@@ -549,13 +549,6 @@ void goto_stmt::print(ostream & file_buffer)
 {
 	file_buffer << "\n" << AST_SPACE << "Goto statement:\n";
 	file_buffer<<AST_NODE_SPACE<<"Successor: "<<BBnum;
-	// file_buffer << "\n" << AST_NODE_SPACE << "LHS (";
-	// lhs->print(file_buffer);
-	// file_buffer << ")";
-
-	// file_buffer << "\n" << AST_NODE_SPACE << "RHS (";
-	// rhs->print(file_buffer);
-	// file_buffer << ")";
 }
 
 Eval_Result & goto_stmt::evaluate(Local_Environment & eval_env, ostream & file_buffer)
@@ -565,6 +558,20 @@ Eval_Result & goto_stmt::evaluate(Local_Environment & eval_env, ostream & file_b
 	Eval_Result & result = * new Eval_Result_Value_Int();
 	result.set_value(BBnum);
 	return result;
+}
+
+Code_For_Ast & goto_stmt::compile()
+{
+	Ics_Opd * const_opd = new Const_Opd<int>(BBnum);
+
+	Icode_Stmt * goto_stmt = new Control_Flow_IC_Stmt(Goto,NULL,NULL,const_opd);
+
+	list<Icode_Stmt *> ic_list;
+	ic_list.push_back(goto_stmt);
+
+	Code_For_Ast & load_code = *new Code_For_Ast(ic_list, NULL);
+
+	return load_code;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////
@@ -609,17 +616,44 @@ Eval_Result & if_else_stmt::evaluate(Local_Environment & eval_env, ostream & fil
 
 	if(eval_relation.get_int_value()){
 		file_buffer<<"\n" << AST_SPACE << "Condition True : Goto (BB "<< lhs->get_BBnum() <<")\n";
-		//if_ast->print_value(eval_env, file_buffer);
 		result.set_value(lhs->get_BBnum());
 		return result;
 	}
 	else{
 		file_buffer<<"\n"<< AST_SPACE << "Condition False : Goto (BB "<< rhs->get_BBnum() <<")\n";
-		//else_ast->print_value(eval_env, file_buffer);
 		result.set_value(rhs->get_BBnum());
 		return result;
 	}
 }
+
+Code_For_Ast & if_else_stmt::compile()
+{
+
+	Code_For_Ast & rel_expr_stmt = rel_expr->compile();
+	Register_Descriptor * rel_expr_register = rel_expr_stmt.get_reg();
+
+	Ics_Opd *  rel_expr_opd = new Register_Addr_Opd(rel_expr_register);
+
+	Ics_Opd *  zero_opd  = new Register_Addr_Opd(machine_dscr_object.spim_register_table[zero]);
+
+	Icode_Stmt * jump_stmt = new Control_Flow_IC_Stmt(bne,rel_expr_opd,zero_opd,new Const_Opd<int>(lhs->get_BBnum()));
+	Icode_Stmt * goto_stmt = new Control_Flow_IC_Stmt(Goto,NULL,NULL,new Const_Opd<int>(rhs->get_BBnum()));
+
+	list<Icode_Stmt *> & ic_list = *new list<Icode_Stmt *>;
+
+	if (rel_expr_stmt.get_icode_list().empty() == false)
+		ic_list = rel_expr_stmt.get_icode_list();
+
+	ic_list.push_back(jump_stmt);
+	ic_list.push_back(goto_stmt);
+
+	Code_For_Ast * assign_stmt;
+	if (ic_list.empty() == false)
+		assign_stmt = new Code_For_Ast(ic_list, NULL);
+
+	return *assign_stmt;
+}
+
 
 /////////////////////////////////////////////////////////////////
 
@@ -699,4 +733,71 @@ Eval_Result & Relational_Expr_Ast::evaluate(Local_Environment & eval_env, ostrea
 		else result.set_value(0);
 	} 
 	return result;	
+}
+
+Code_For_Ast & Relational_Expr_Ast::compile()
+{
+	Code_For_Ast & lhs_stmt = lhs->compile();
+	Register_Descriptor * lhs_register = lhs_stmt.get_reg();
+	lhs_register->used_for_expr_result=true;
+
+	Code_For_Ast & rhs_stmt = rhs->compile();
+	Register_Descriptor * rhs_register = rhs_stmt.get_reg();
+	rhs_register->used_for_expr_result=true;
+
+	Register_Descriptor * result_register = machine_dscr_object.get_new_register();
+
+	Ics_Opd *  lhs_opd = new Register_Addr_Opd(lhs_register);
+	Ics_Opd *  rhs_opd = new Register_Addr_Opd(rhs_register);
+	Ics_Opd *  res_opd = new Register_Addr_Opd(result_register);
+
+	Icode_Stmt * compute_stmt = NULL;
+
+	if(op == "GT")
+	{
+		compute_stmt = new Compute_IC_Stmt(sgt,lhs_opd,rhs_opd,res_opd);		
+	}
+	else if(op == "GE")
+	{
+		compute_stmt = new Compute_IC_Stmt(sge,lhs_opd,rhs_opd,res_opd);		
+	}
+	else if(op == "LT")
+	{
+		compute_stmt = new Compute_IC_Stmt(slt,lhs_opd,rhs_opd,res_opd);		
+	}
+	else if(op == "LE")
+	{
+		compute_stmt = new Compute_IC_Stmt(sle,lhs_opd,rhs_opd,res_opd);		
+	}
+	else if(op == "EQ")
+	{
+		compute_stmt = new Compute_IC_Stmt(seq,lhs_opd,rhs_opd,res_opd);		
+	}
+	else if(op == "NE")
+	{
+		compute_stmt = new Compute_IC_Stmt(sne,lhs_opd,rhs_opd,res_opd);		
+	}
+	else
+	{
+		CHECK_INVARIANT(CONTROL_SHOULD_NOT_REACH,"Illegal local register allocation scenario (:-)");
+	}
+
+	list<Icode_Stmt *> & ic_list = *new list<Icode_Stmt *>;
+
+	if (lhs_stmt.get_icode_list().empty() == false)
+		ic_list = lhs_stmt.get_icode_list();
+
+	if (rhs_stmt.get_icode_list().empty() == false)
+		ic_list.splice(ic_list.end(), rhs_stmt.get_icode_list());
+
+	ic_list.push_back(compute_stmt);
+
+	Code_For_Ast * assign_stmt;
+	if (ic_list.empty() == false)
+		assign_stmt = new Code_For_Ast(ic_list, result_register);
+
+	lhs_register->used_for_expr_result=false;
+	rhs_register->used_for_expr_result=false;
+
+	return *assign_stmt;
 }

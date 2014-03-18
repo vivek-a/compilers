@@ -74,9 +74,9 @@ class Register_Descriptor
     Register_Use_Category reg_use; 
 
     list<Symbol_Table_Entry *> lra_symbol_list;
-    bool used_for_expr_result;
 
   public:
+    bool used_for_expr_result;
     Register_Descriptor (Spim_Register reg, string nam, Register_Val_Type vt, Register_Use_Category uc);
     Register_Descriptor() {}
     ~Register_Descriptor() {}
