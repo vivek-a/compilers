@@ -71,11 +71,10 @@ class Register_Descriptor
     Spim_Register reg_id;
     string reg_name;
     Register_Val_Type value_type;
-    Register_Use_Category reg_use; 
-
     list<Symbol_Table_Entry *> lra_symbol_list;
 
   public:
+    Register_Use_Category reg_use; 
     bool used_for_expr_result;
     Register_Descriptor (Spim_Register reg, string nam, Register_Val_Type vt, Register_Use_Category uc);
     Register_Descriptor() {}

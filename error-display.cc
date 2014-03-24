@@ -54,6 +54,7 @@ void report_violation_of_condition(bool condition, string error_message, int lin
 		cerr <<  "cfglp error: File: " << file_name << ", Line: " << lineno << ": " << error_message << "\n";
 		global_error_status = true;
 	}
+	// exit(1);
 } 
 
 void report_violation_and_abort(bool condition, string error_message, int lineno)

@@ -344,6 +344,14 @@ Register_Descriptor * Machine_Description::get_new_register()
 			return reg_desc;
 	}
 
+	for (i = spim_register_table.begin(); i != spim_register_table.end(); i++)
+	{
+		reg_desc = i->second;
+
+		if ( ( (i->second)->reg_use == gp_data) && (! (i->second)->used_for_expr_result) )
+			return reg_desc;
+	}
+
 	CHECK_INVARIANT(CONTROL_SHOULD_NOT_REACH, 
 			"Error in get_new_reg or register requirements of input program cannot be met");
 }
