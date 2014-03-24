@@ -98,6 +98,10 @@ void Register_Descriptor::update_symbol_information(Symbol_Table_Entry & sym_ent
 		lra_symbol_list.push_back(&sym_entry);
 }
 
+list<Symbol_Table_Entry *> Register_Descriptor::get_lra_symbol_list(){
+	return lra_symbol_list;
+}
+
 //////////////////////////////// Lra_Outcome //////////////////////////////////////////
 
 Lra_Outcome::Lra_Outcome(Register_Descriptor * rdp, bool nr, bool sr, bool dr, bool mv, bool ld)
@@ -132,7 +136,7 @@ void Lra_Outcome::optimize_lra(Lra_Scenario lcase, Ast * destination_memory, Ast
 	// Register allocation is done only when the source is in either memory or is a constant
 
 	Register_Descriptor * destination_register, * source_register, * result_register;
-	Symbol_Table_Entry * source_symbol_entry, * destination_symbol_entry;
+	Symbol_Table_Entry * source_symbol_entry, * destination_symbol_entry = NULL;
 
 	destination_register = NULL;
 	source_register = NULL;
@@ -152,7 +156,8 @@ void Lra_Outcome::optimize_lra(Lra_Scenario lcase, Ast * destination_memory, Ast
 		CHECK_INVARIANT(source_memory, 
 			"Sourse ast pointer cannot be NULL for m2m scenario in lra");
 
-		if (typeid(*destination_memory) == typeid(Number_Ast<int>))
+
+		if (typeid(*destination_memory) != typeid(Name_Ast))
 			destination_register = NULL;
 		else
 		{
@@ -160,7 +165,7 @@ void Lra_Outcome::optimize_lra(Lra_Scenario lcase, Ast * destination_memory, Ast
 			destination_register = destination_symbol_entry->get_register(); 
 		}
 
-		if (typeid(*source_memory) == typeid(Number_Ast<int>))
+		if (typeid(*source_memory) != typeid(Name_Ast))
 			source_register = NULL;
 		else
 		{
@@ -174,7 +179,7 @@ void Lra_Outcome::optimize_lra(Lra_Scenario lcase, Ast * destination_memory, Ast
 			is_same_as_source = true;
 			load_needed = false;
 		}
-		else if (destination_register != NULL)
+		else if (destination_register != NULL && (destination_register->get_lra_symbol_list()).size() == 1)
 		{
 			result_register = destination_register;
 			is_same_as_destination = true;
@@ -190,12 +195,18 @@ void Lra_Outcome::optimize_lra(Lra_Scenario lcase, Ast * destination_memory, Ast
 		break;
 
 	case mc_2r:
-		CHECK_INVARIANT(source_memory, "Sourse ast pointer cannot be NULL for m2r scenario in lra");
+		CHECK_INVARIANT(source_memory, "Sourse ast pointer cannot be NULL for m2r scenario in lra"); 
 
-		source_symbol_entry = &(source_memory->get_symbol_entry());
-		source_register = source_symbol_entry->get_register(); 
+		if (typeid(*source_memory) != typeid(Name_Ast))
+			source_register = NULL;
+		else
+		{
+			source_symbol_entry = &(source_memory->get_symbol_entry());
+			source_register = source_symbol_entry->get_register(); 
+		}
 
-		if (source_register != NULL)
+
+		if (source_register != NULL )
 		{
 			result_register = source_register;
 			is_same_as_source = true;
@@ -231,11 +242,12 @@ void Lra_Outcome::optimize_lra(Lra_Scenario lcase, Ast * destination_memory, Ast
 
 	CHECK_INVARIANT ((result_register != NULL), "Inconsistent information in lra");
 	register_description = result_register;
+	if(destination_symbol_entry){
+		if (destination_register)
+			destination_symbol_entry->free_register(destination_register); 
 
-	if (destination_register)
-		destination_symbol_entry->free_register(destination_register); 
-
-	destination_symbol_entry->update_register(result_register);
+		destination_symbol_entry->update_register(result_register);
+	}
 }
 
 /******************************* Machine Description *****************************************/

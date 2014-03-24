@@ -1,11 +1,7 @@
 main()
 {
-<bb 3>:
 	int a;
-	int b;
-
-<bb 2>:
+<bb 1>:
 	a = 3;
-	b = 3;
 	return;
 }

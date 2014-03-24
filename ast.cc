@@ -213,12 +213,27 @@ Code_For_Ast & Assignment_Ast::compile_and_optimize_ast(Lra_Outcome & lra)
 	CHECK_INVARIANT((lhs != NULL), "Lhs cannot be null");
 	CHECK_INVARIANT((rhs != NULL), "Rhs cannot be null");
 
-	lra.optimize_lra(mc_2m, lhs, rhs);
+	if (typeid(*rhs) != typeid(Relational_Expr_Ast)){
+		lra.optimize_lra(mc_2m, lhs, rhs);
+	}
+	
 	Code_For_Ast load_stmt = rhs->compile_and_optimize_ast(lra);
 
 	Register_Descriptor * result_register = load_stmt.get_reg();
 
 	Code_For_Ast store_stmt = lhs->create_store_stmt(result_register);
+
+
+	Symbol_Table_Entry *  destination_symbol_entry = & lhs->get_symbol_entry();
+	Register_Descriptor * destination_register = destination_symbol_entry->get_register();
+
+	if(destination_symbol_entry){
+		if (destination_register)
+			destination_symbol_entry->free_register(destination_register); 
+
+		destination_symbol_entry->update_register(result_register);
+	}
+
 
 	list<Icode_Stmt *> ic_list;
 
@@ -344,22 +359,6 @@ Eval_Result & Name_Ast::evaluate(Local_Environment & eval_env, ostream & file_bu
 	return get_value_of_evaluation(eval_env);
 }
 
-Code_For_Ast & Name_Ast::compile()
-{
-	Ics_Opd * opd = new Mem_Addr_Opd(*variable_symbol_entry);
-	Register_Descriptor * result_register = machine_dscr_object.get_new_register();
-	Ics_Opd * register_opd = new Register_Addr_Opd(result_register);
-
-	Icode_Stmt * load_stmt = new Move_IC_Stmt(load, opd, register_opd);
-
-	list<Icode_Stmt *> ic_list;
-	ic_list.push_back(load_stmt);
-
-	Code_For_Ast & load_code = *new Code_For_Ast(ic_list, result_register);
-
-	return load_code;
-}
-
 Code_For_Ast & Name_Ast::create_store_stmt(Register_Descriptor * store_register)
 {
 	CHECK_INVARIANT((store_register != NULL), "Store register cannot be null");
@@ -379,6 +378,23 @@ Code_For_Ast & Name_Ast::create_store_stmt(Register_Descriptor * store_register)
 
 	return name_code;
 }
+
+Code_For_Ast & Name_Ast::compile()
+{
+	Ics_Opd * opd = new Mem_Addr_Opd(*variable_symbol_entry);
+	Register_Descriptor * result_register = machine_dscr_object.get_new_register();
+	Ics_Opd * register_opd = new Register_Addr_Opd(result_register);
+
+	Icode_Stmt * load_stmt = new Move_IC_Stmt(load, opd, register_opd);
+
+	list<Icode_Stmt *> ic_list;
+	ic_list.push_back(load_stmt);
+
+	Code_For_Ast & load_code = *new Code_For_Ast(ic_list, result_register);
+
+	return load_code;
+}
+
 
 Code_For_Ast & Name_Ast::compile_and_optimize_ast(Lra_Outcome & lra)
 {
@@ -574,6 +590,21 @@ Code_For_Ast & goto_stmt::compile()
 	return load_code;
 }
 
+Code_For_Ast & goto_stmt::compile_and_optimize_ast(Lra_Outcome & lra)
+{
+
+	Ics_Opd * const_opd = new Const_Opd<int>(BBnum);
+
+	Icode_Stmt * goto_stmt = new Control_Flow_IC_Stmt(Goto,NULL,NULL,const_opd);
+
+	list<Icode_Stmt *> ic_list;
+	ic_list.push_back(goto_stmt);
+
+	Code_For_Ast & load_code = *new Code_For_Ast(ic_list, NULL);
+
+	return load_code;
+}
+
 /////////////////////////////////////////////////////////////////////////////////////////////
 
 if_else_stmt::if_else_stmt(Ast * temp_rel_expr ,  Ast * temp_lhs  , Ast * temp_rhs  , int line)
@@ -654,7 +685,33 @@ Code_For_Ast & if_else_stmt::compile()
 	return *assign_stmt;
 }
 
+Code_For_Ast & if_else_stmt::compile_and_optimize_ast(Lra_Outcome & lra)
+{
+	Code_For_Ast & rel_expr_stmt = rel_expr->compile_and_optimize_ast(lra);
 
+	Register_Descriptor * rel_expr_register = rel_expr_stmt.get_reg();
+
+	Ics_Opd *  rel_expr_opd = new Register_Addr_Opd(rel_expr_register);
+
+	Ics_Opd *  zero_opd  = new Register_Addr_Opd(machine_dscr_object.spim_register_table[zero]);
+
+	Icode_Stmt * jump_stmt = new Control_Flow_IC_Stmt(bne,rel_expr_opd,zero_opd,new Const_Opd<int>(lhs->get_BBnum()));
+	Icode_Stmt * goto_stmt = new Control_Flow_IC_Stmt(Goto,NULL,NULL,new Const_Opd<int>(rhs->get_BBnum()));
+
+	list<Icode_Stmt *> & ic_list = *new list<Icode_Stmt *>;
+
+	if (rel_expr_stmt.get_icode_list().empty() == false)
+		ic_list = rel_expr_stmt.get_icode_list();
+
+	ic_list.push_back(jump_stmt);
+	ic_list.push_back(goto_stmt);
+
+	Code_For_Ast * assign_stmt;
+	if (ic_list.empty() == false)
+		assign_stmt = new Code_For_Ast(ic_list, NULL);
+
+	return *assign_stmt;
+}
 /////////////////////////////////////////////////////////////////
 
 Relational_Expr_Ast::Relational_Expr_Ast(Ast * temp_lhs, Ast * temp_rhs , string temp_op ,int line)
@@ -801,3 +858,77 @@ Code_For_Ast & Relational_Expr_Ast::compile()
 
 	return *assign_stmt;
 }
+
+Code_For_Ast & Relational_Expr_Ast::compile_and_optimize_ast(Lra_Outcome & lra)
+{
+	lra.optimize_lra( mc_2r , NULL , lhs );
+	Code_For_Ast  lhs_stmt = lhs->compile_and_optimize_ast(lra);
+	
+	Register_Descriptor * lhs_register = lhs_stmt.get_reg();
+	lhs_register->used_for_expr_result=true;
+
+	lra.optimize_lra( mc_2r , NULL ,rhs );
+	Code_For_Ast rhs_stmt = rhs->compile_and_optimize_ast(lra);
+
+
+	Register_Descriptor * rhs_register = rhs_stmt.get_reg();
+	rhs_register->used_for_expr_result=true;
+
+	Register_Descriptor * result_register = machine_dscr_object.get_new_register();
+
+	Ics_Opd *  lhs_opd = new Register_Addr_Opd(lhs_register);
+	Ics_Opd *  rhs_opd = new Register_Addr_Opd(rhs_register);
+	Ics_Opd *  res_opd = new Register_Addr_Opd(result_register);
+
+	Icode_Stmt * compute_stmt = NULL;
+
+	if(op == "GT")
+	{
+		compute_stmt = new Compute_IC_Stmt(sgt,lhs_opd,rhs_opd,res_opd);		
+	}
+	else if(op == "GE")
+	{
+		compute_stmt = new Compute_IC_Stmt(sge,lhs_opd,rhs_opd,res_opd);		
+	}
+	else if(op == "LT")
+	{
+		compute_stmt = new Compute_IC_Stmt(slt,lhs_opd,rhs_opd,res_opd);		
+	}
+	else if(op == "LE")
+	{
+		compute_stmt = new Compute_IC_Stmt(sle,lhs_opd,rhs_opd,res_opd);		
+	}
+	else if(op == "EQ")
+	{
+		compute_stmt = new Compute_IC_Stmt(seq,lhs_opd,rhs_opd,res_opd);		
+	}
+	else if(op == "NE")
+	{
+		compute_stmt = new Compute_IC_Stmt(sne,lhs_opd,rhs_opd,res_opd);		
+	}
+	else
+	{
+		CHECK_INVARIANT(CONTROL_SHOULD_NOT_REACH,"Illegal local register allocation scenario (:-)");
+	}
+
+	list<Icode_Stmt *> & ic_list = *new list<Icode_Stmt *>;
+
+	if (lhs_stmt.get_icode_list().empty() == false)
+		ic_list = lhs_stmt.get_icode_list();
+
+	if (rhs_stmt.get_icode_list().empty() == false)
+		ic_list.splice(ic_list.end(), rhs_stmt.get_icode_list());
+
+	ic_list.push_back(compute_stmt);
+
+	Code_For_Ast * assign_stmt;
+	if (ic_list.empty() == false)
+		assign_stmt = new Code_For_Ast(ic_list, result_register);
+
+	lhs_register->used_for_expr_result=false;
+	rhs_register->used_for_expr_result=false;
+
+	return *assign_stmt;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////

@@ -96,6 +96,8 @@ class Register_Descriptor
     bool get_used_for_expr_result();
     void reset_use_for_expr_result();
 
+    list<Symbol_Table_Entry *> get_lra_symbol_list();
+
     bool is_free();
 };
 

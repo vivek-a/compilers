@@ -1,0 +1,15 @@
+110050039 Vivek Atulkar
+110050048 Sudipto Biswas
+
+lab 5b Compiler-Making
+
+Changes in  reg-alloc.cc ::
+Since in level 1 relational expression ast is introduced
+	new checks are implemented for Name_Ast
+
+Changes in ast.cc ::
+made functions compile_and optimize_ast for asts
+	goto
+	if_else
+	relational_expr 
+
