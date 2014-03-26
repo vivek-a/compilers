@@ -347,8 +347,14 @@ Register_Descriptor * Machine_Description::get_new_register()
 	for (i = spim_register_table.begin(); i != spim_register_table.end(); i++)
 	{
 		reg_desc = i->second;
+		reg_desc->clear_lra_symbol_list();
+	}
 
-		if ( ( (i->second)->reg_use == gp_data) && (! (i->second)->used_for_expr_result) )
+	for (i = spim_register_table.begin(); i != spim_register_table.end(); i++)
+	{
+		reg_desc = i->second;
+
+		if (reg_desc->is_free())
 			return reg_desc;
 	}
 
