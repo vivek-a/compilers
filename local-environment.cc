@@ -104,9 +104,8 @@ Eval_Result_Value_Int::~Eval_Result_Value_Int()
 
 void Eval_Result_Value_Int::set_value(float number)
 {
-	stringstream msg;
-	msg << "No set_value() fucntion yo";
-	CHECK_INVARIANT(CONTROL_SHOULD_NOT_REACH, msg.str());
+	value.i = number;
+	defined = true;
 }
 
 void Eval_Result_Value_Int::set_value(int number)
@@ -160,9 +159,8 @@ void Eval_Result_Value_Float::set_value(float number)
 
 void Eval_Result_Value_Float::set_value(int number)
 {
-	stringstream msg;
-	msg << "No set_value() fucntion yo";
-	CHECK_INVARIANT(CONTROL_SHOULD_NOT_REACH, msg.str());
+	value.f = number;
+	defined = true;
 }
 
 mytypes Eval_Result_Value_Float::get_value()

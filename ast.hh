@@ -202,4 +202,57 @@ public:
 	Code_For_Ast & compile_and_optimize_ast(Lra_Outcome & lra);
 };
 
+
+class Arith_Expr_Ast:public Ast
+{
+	Ast * lhs;
+	Ast * rhs;
+	string op;
+
+public:
+	Arith_Expr_Ast(Ast * temp_lhs, Ast * temp_rhs , string temp_op, int line);
+	~Arith_Expr_Ast();
+
+	void print(ostream & file_buffer);
+
+	Eval_Result & evaluate(Local_Environment & eval_env, ostream & file_buffer);
+	Data_Type get_data_type();
+
+	bool check_ast();
+
+	Code_For_Ast & compile();
+	Code_For_Ast & compile_and_optimize_ast(Lra_Outcome & lra);
+};
+
+class Typecast_Expr_Ast:public Ast
+{
+	Ast * lhs;
+	string type;
+
+public:
+	Typecast_Expr_Ast(Ast * temp_lhs,string temp_op, int line);
+	~Typecast_Expr_Ast();
+	Data_Type get_data_type();
+	void print(ostream & file_buffer);
+
+	Eval_Result & evaluate(Local_Environment & eval_env, ostream & file_buffer);
+	Code_For_Ast & compile();
+	Code_For_Ast & compile_and_optimize_ast(Lra_Outcome & lra);
+};
+
+class Unary_Expr_Ast:public Ast
+{
+	Ast * lhs;
+
+public:
+	Unary_Expr_Ast(Ast * temp_lhs,int line);
+	~Unary_Expr_Ast();
+	Data_Type get_data_type();
+	void print(ostream & file_buffer);
+
+	Eval_Result & evaluate(Local_Environment & eval_env, ostream & file_buffer);
+	Code_For_Ast & compile();
+	Code_For_Ast & compile_and_optimize_ast(Lra_Outcome & lra);
+};
+
 #endif

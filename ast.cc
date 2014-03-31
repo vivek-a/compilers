@@ -123,9 +123,12 @@ bool Assignment_Ast::check_ast()
 	CHECK_INVARIANT((rhs != NULL), "Rhs of Assignment_Ast cannot be null");
 	CHECK_INVARIANT((lhs != NULL), "Lhs of Assignment_Ast cannot be null");
 
+	// cout<<"-------"<<lhs->get_data_type()<<"-----"<<rhs->get_data_type()<<endl;
+
 	if (lhs->get_data_type() == rhs->get_data_type())
 	{
 		node_data_type = lhs->get_data_type();
+		// cout<<"assign waal ---"<<node_data_type<<endl;
 		return true;
 	}
 
@@ -556,6 +559,7 @@ Code_For_Ast & Return_Ast::compile_and_optimize_ast(Lra_Outcome & lra)
 }
 
 template class Number_Ast<int>;
+template class Number_Ast<float>;
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -662,8 +666,7 @@ Eval_Result & if_else_stmt::evaluate(Local_Environment & eval_env, ostream & fil
 	
 
 	Eval_Result & eval_relation = rel_expr->evaluate(eval_env, file_buffer);
-
-	if((eval_relation.get_value()).i) {
+	if((eval_relation.get_value()).i){
 		file_buffer<<"\n" << AST_SPACE << "Condition True : Goto (BB "<< lhs->get_BBnum() <<")\n";
 		result.set_value(lhs->get_BBnum());
 		return result;
@@ -752,7 +755,7 @@ Relational_Expr_Ast::~Relational_Expr_Ast()
 
 Data_Type Relational_Expr_Ast::get_data_type()
 {
-	return node_data_type;
+	return int_data_type;
 }
 
 void Relational_Expr_Ast::print(ostream & file_buffer)
@@ -777,36 +780,70 @@ Eval_Result & Relational_Expr_Ast::evaluate(Local_Environment & eval_env, ostrea
 	Eval_Result & result_rhs = rhs->evaluate(eval_env, file_buffer);
 	Eval_Result & result = * new Eval_Result_Value_Int();
 
-	if(op == "LT")
-	{
-		if( (result_lhs.get_value()).i < (result_rhs.get_value()).i)result.set_value(1);			
-		else result.set_value(0);
-	} 
-	else if(op == "GT") 
-	{
-		if((result_lhs.get_value()).i > (result_rhs.get_value()).i)result.set_value(1);			
-		else result.set_value(0);
-	} 
-	else if(op == "LE")
-	{
-		if((result_lhs.get_value()).i <= (result_rhs.get_value()).i)result.set_value(1);			
-		else result.set_value(0);
-	} 
-	else if(op == "GE")
-	{
-		if((result_lhs.get_value()).i >= (result_rhs.get_value()).i)result.set_value(1);			
-		else result.set_value(0);
-	} 
-	else if(op == "EQ")
-	{
-		if((result_lhs.get_value()).i == (result_rhs.get_value()).i)result.set_value(1);			
-		else result.set_value(0);
-	} 
-	else if(op == "NE")
-	{
-		if((result_lhs.get_value()).i != (result_rhs.get_value()).i)result.set_value(1);			
-		else result.set_value(0);
-	} 
+	if(lhs->get_data_type()==int_data_type){
+		if(op == "LT")
+		{
+			if( (result_lhs.get_value()).i < (result_rhs.get_value()).i)result.set_value(1);			
+			else result.set_value(0);
+		} 
+		else if(op == "GT") 
+		{
+			if((result_lhs.get_value()).i > (result_rhs.get_value()).i)result.set_value(1);			
+			else result.set_value(0);
+		} 
+		else if(op == "LE")
+		{
+			if((result_lhs.get_value()).i <= (result_rhs.get_value()).i)result.set_value(1);			
+			else result.set_value(0);
+		} 
+		else if(op == "GE")
+		{
+			if((result_lhs.get_value()).i >= (result_rhs.get_value()).i)result.set_value(1);			
+			else result.set_value(0);
+		} 
+		else if(op == "EQ")
+		{
+			if((result_lhs.get_value()).i == (result_rhs.get_value()).i)result.set_value(1);			
+			else result.set_value(0);
+		} 
+		else if(op == "NE")
+		{
+			if((result_lhs.get_value()).i != (result_rhs.get_value()).i)result.set_value(1);			
+			else result.set_value(0);
+		} 
+	}
+	else{
+		if(op == "LT")
+		{
+			if( (result_lhs.get_value()).f < (result_rhs.get_value()).f)result.set_value(1);			
+			else result.set_value(0);
+		} 
+		else if(op == "GT") 
+		{
+			if((result_lhs.get_value()).f > (result_rhs.get_value()).f)result.set_value(1);			
+			else result.set_value(0);
+		} 
+		else if(op == "LE")
+		{
+			if((result_lhs.get_value()).f <= (result_rhs.get_value()).f)result.set_value(1);			
+			else result.set_value(0);
+		} 
+		else if(op == "GE")
+		{
+			if((result_lhs.get_value()).f >= (result_rhs.get_value()).f)result.set_value(1);			
+			else result.set_value(0);
+		} 
+		else if(op == "EQ")
+		{
+			if((result_lhs.get_value()).f == (result_rhs.get_value()).f)result.set_value(1);			
+			else result.set_value(0);
+		} 
+		else if(op == "NE")
+		{
+			if((result_lhs.get_value()).f != (result_rhs.get_value()).f)result.set_value(1);			
+			else result.set_value(0);
+		} 
+	}
 	return result;	
 }
 
@@ -950,3 +987,246 @@ Code_For_Ast & Relational_Expr_Ast::compile_and_optimize_ast(Lra_Outcome & lra)
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
+
+Arith_Expr_Ast::Arith_Expr_Ast(Ast * temp_lhs, Ast * temp_rhs , string temp_op ,int line)
+{
+	lhs = temp_lhs;
+	rhs = temp_rhs;
+	op= temp_op;
+
+	ast_num_child = binary_arity;
+	lineno = line;
+}
+
+Arith_Expr_Ast::~Arith_Expr_Ast()
+{
+	delete lhs;
+	delete rhs;
+}
+
+Data_Type Arith_Expr_Ast::get_data_type()
+{
+	return node_data_type;
+}
+
+bool Arith_Expr_Ast::check_ast()
+{
+	
+	if (lhs->get_data_type() == rhs->get_data_type())
+	{
+		node_data_type = lhs->get_data_type();
+		return true;
+	}
+	CHECK_INVARIANT(false,"Arithmetic statement data type not compatible");
+}
+
+void Arith_Expr_Ast::print(ostream & file_buffer)
+{
+	file_buffer<< "\n" << AST_NODE_SPACE<<"Arith: "<<op <<"\n";
+
+	file_buffer << AST_NODE_SPACE << "   LHS (";
+	lhs->print(file_buffer);
+	file_buffer << ")";
+
+	if(rhs!=NULL)
+	{
+		file_buffer<<"\n" << AST_NODE_SPACE << "   RHS (";
+		rhs->print(file_buffer);
+		file_buffer << ")";
+	}
+}
+
+Eval_Result & Arith_Expr_Ast::evaluate(Local_Environment & eval_env, ostream & file_buffer)
+{
+	Eval_Result & result_lhs = lhs->evaluate(eval_env, file_buffer);
+	Eval_Result & result_rhs = rhs->evaluate(eval_env, file_buffer);
+	
+	Eval_Result & int_result = * new Eval_Result_Value_Int();
+	Eval_Result & float_result = * new Eval_Result_Value_Float();
+
+	if( (lhs->get_data_type() == int_data_type) && (rhs->get_data_type() == int_data_type) )
+	{
+		if(op == "PLUS")
+		{
+			int_result.set_value(  (result_lhs.get_value().i+result_rhs.get_value().i) ) ;
+		} 
+		else if(op == "MINUS") 
+		{
+			int_result.set_value(  (result_lhs.get_value().i-result_rhs.get_value().i) ) ;
+		} 
+		else if(op == "MULT")
+		{
+			int_result.set_value(  (result_lhs.get_value().i * result_rhs.get_value().i) ) ;
+		}
+		else if(op == "DIV")
+		{
+			int_result.set_value(  (result_lhs.get_value().i / result_rhs.get_value().i) ) ;
+		} 
+		return int_result;
+	}
+	else
+	{
+		if(op == "PLUS")
+		{
+			float_result.set_value( result_lhs.get_value().f+result_rhs.get_value().f ) ;
+		} 
+		else if(op == "MINUS") 
+		{
+			float_result.set_value( result_lhs.get_value().f-result_rhs.get_value().f ) ;
+		} 
+		else if(op == "MULT")
+		{
+			float_result.set_value( result_lhs.get_value().f * result_rhs.get_value().f ) ;
+		}
+		else if(op == "DIV")
+		{
+			float_result.set_value( result_lhs.get_value().f / result_rhs.get_value().f ) ;
+		} 
+		return float_result;
+	}	
+}
+
+Code_For_Ast & Arith_Expr_Ast::compile()
+{
+	Code_For_Ast * assign_stmt;
+	
+	return *assign_stmt;
+}
+
+Code_For_Ast & Arith_Expr_Ast::compile_and_optimize_ast(Lra_Outcome & lra)
+{
+	Code_For_Ast * assign_stmt;
+	
+	return *assign_stmt;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////
+
+Typecast_Expr_Ast::Typecast_Expr_Ast(Ast * temp_lhs , string temp_op, int line)
+{
+	lhs = temp_lhs;
+	type=temp_op;
+
+	ast_num_child = unary_arity;
+	lineno = line;
+}
+
+Typecast_Expr_Ast::~Typecast_Expr_Ast()
+{
+	delete lhs;
+}
+
+Data_Type Typecast_Expr_Ast::get_data_type()
+{
+	if(type=="integer")return int_data_type;
+	else return float_data_type;
+}
+
+void Typecast_Expr_Ast::print(ostream & file_buffer)
+{
+	lhs->print(file_buffer);
+}
+
+Eval_Result & Typecast_Expr_Ast::evaluate(Local_Environment & eval_env, ostream & file_buffer)
+{
+	Eval_Result & result_lhs = lhs->evaluate(eval_env, file_buffer);
+
+	Eval_Result & int_result = * new Eval_Result_Value_Int();
+	Eval_Result & float_result = * new Eval_Result_Value_Float();
+
+	if(this->get_data_type() == int_data_type) 
+	{
+		if(lhs->get_data_type()==int_data_type)
+			int_result.set_value( result_lhs.get_value().i );
+		else if(lhs->get_data_type()==float_data_type)
+			int_result.set_value( result_lhs.get_value().f );
+		return int_result;
+	}
+
+	else if(this->get_data_type() == float_data_type)
+	{
+		if(lhs->get_data_type()==int_data_type)
+			float_result.set_value( result_lhs.get_value().i );
+		else if(lhs->get_data_type()==float_data_type)
+			float_result.set_value( result_lhs.get_value().f );
+		return float_result;
+	} 
+	
+		
+}
+
+Code_For_Ast & Typecast_Expr_Ast::compile()
+{
+	Code_For_Ast * assign_stmt;
+	
+	return *assign_stmt;
+}
+
+Code_For_Ast & Typecast_Expr_Ast::compile_and_optimize_ast(Lra_Outcome & lra)
+{
+	Code_For_Ast * assign_stmt;
+	
+	return *assign_stmt;
+}
+////////////////////////////////////////////////////////////////////////////////////////////
+
+Unary_Expr_Ast::Unary_Expr_Ast(Ast * temp_lhs, int line)
+{
+	lhs = temp_lhs;
+	ast_num_child = unary_arity;
+	lineno = line;
+}
+
+Unary_Expr_Ast::~Unary_Expr_Ast()
+{
+	delete lhs;
+}
+
+Data_Type Unary_Expr_Ast::get_data_type()
+{
+	return lhs->get_data_type();
+}
+
+void Unary_Expr_Ast::print(ostream & file_buffer)
+{
+	file_buffer<< "\n" << AST_NODE_SPACE<<"Arith: UMINUS" <<"\n";
+
+	file_buffer << AST_NODE_SPACE << "   LHS (";
+	lhs->print(file_buffer);
+	file_buffer << ")";
+}
+
+Eval_Result & Unary_Expr_Ast::evaluate(Local_Environment & eval_env, ostream & file_buffer)
+{
+	Eval_Result & result_lhs = lhs->evaluate(eval_env, file_buffer);
+
+	Eval_Result & int_result = * new Eval_Result_Value_Int();
+	Eval_Result & float_result = * new Eval_Result_Value_Float();
+
+	if(lhs->get_data_type() == int_data_type){	
+		int_result.set_value(-1 * result_lhs.get_value().i);
+		return int_result;
+	}
+
+	else if(lhs->get_data_type() == float_data_type)
+	{
+		float_result.set_value( -1 * result_lhs.get_value().f );
+		return float_result;
+	}
+}
+
+Code_For_Ast & Unary_Expr_Ast::compile()
+{
+	Code_For_Ast * assign_stmt;
+	
+	return *assign_stmt;
+}
+
+Code_For_Ast & Unary_Expr_Ast::compile_and_optimize_ast(Lra_Outcome & lra)
+{
+	Code_For_Ast * assign_stmt;
+	
+	return *assign_stmt;
+}
+
+

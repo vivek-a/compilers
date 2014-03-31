@@ -27,6 +27,11 @@
 %%
 
 
+[+*/-]		{
+			store_token_name("ARITHOP");
+			return matched()[0];
+		}
+
 "<"		{
 			store_token_name("LT");
 			return Parser::LT; 
@@ -52,12 +57,25 @@
 			return Parser::NE; 
 		}
 
-"=="		{
+"=="	{
 			store_token_name("EQ");
 			return Parser::EQ; 
 		}
 
+=		{
+			store_token_name("ASSIGN_OP");
+			return Parser::ASSIGN_OP; 
+		}
 
+float	{
+			store_token_name("FLOAT");
+			return Parser::FLOAT;
+		}
+
+double		{
+			store_token_name("DOUBLE");
+			return Parser::DOUBLE;
+		}
 
 
 if		{
@@ -85,7 +103,13 @@ return		{
 			return Parser::RETURN; 
 		}
 
+[-]?[0-9]+\.[0-9]+	{ 
+				store_token_name("FNUM");
 
+				ParserBase::STYPE__ * val = getSval();
+				val->float_value = atof(matched().c_str());
+				return Parser::FLOAT_NUMBER; 
+			}
 
 [-]?[[:digit:]]+ 	{ 
 				store_token_name("NUM");
@@ -116,11 +140,6 @@ return		{
 
 				return Parser::BBNUM;
 			}
-
-"="	{
-		store_token_name("ASSIGN_OP");
-		return Parser::ASSIGN;
-	}
 
 [:{}();]	{
 			store_token_name("META CHAR");

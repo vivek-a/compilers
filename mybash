@@ -1,6 +1,6 @@
 # !/bin/bash
 
 make -f Makefile.cfglp
-./cfglp test_files/EmptyBB.cs306.cfg -d -tokens -ast -icode  > out1
-./cfglp64 test_files/EmptyBB.cs306.cfg -d -tokens -ast -icode  > out2
+./cfglp test_files/MultGlobLoc.cs306.cfg -d -tokens -ast -eval  > out1
+./cfglp64 test_files/MultGlobLoc.cs306.cfg -d -tokens -ast -eval  > out2
 diffuse out1  out2
