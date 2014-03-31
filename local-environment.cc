@@ -32,7 +32,7 @@ using namespace std;
 #include"error-display.hh"
 #include"user-options.hh"
 
-float Eval_Result::get_value()
+mytypes Eval_Result::get_value()
 {
 	stringstream msg;
 	msg << "No get_value() function for " << typeid(*this).name();
@@ -40,6 +40,13 @@ float Eval_Result::get_value()
 }
 
 void Eval_Result::set_value(float number)
+{
+	stringstream msg;
+	msg << "The set_value(float) function for " << typeid(*this).name();
+	CHECK_INVARIANT(CONTROL_SHOULD_NOT_REACH, msg.str());
+}
+
+void Eval_Result::set_value(int number)
 {
 	stringstream msg;
 	msg << "The set_value(int) function for " << typeid(*this).name();
@@ -69,7 +76,14 @@ void Eval_Result_Value::set_value(float value)
 	CHECK_INVARIANT(CONTROL_SHOULD_NOT_REACH, msg.str());
 }
 
-float Eval_Result_Value::get_value()
+void Eval_Result_Value::set_value(int value)
+{
+	stringstream msg;
+	msg << "No set_value() fucntion for " << typeid(*this).name();
+	CHECK_INVARIANT(CONTROL_SHOULD_NOT_REACH, msg.str());
+}
+
+mytypes Eval_Result_Value::get_value()
 {
 	stringstream msg;
 	msg << "No get_value() function for " << typeid(*this).name();
@@ -80,7 +94,7 @@ float Eval_Result_Value::get_value()
 
 Eval_Result_Value_Int::Eval_Result_Value_Int()
 {
-	value = 0;
+	value.i = 0;
 	defined = false;
 	result_type = int_result;
 }
@@ -90,11 +104,18 @@ Eval_Result_Value_Int::~Eval_Result_Value_Int()
 
 void Eval_Result_Value_Int::set_value(float number)
 {
-	value = number;
+	stringstream msg;
+	msg << "No set_value() fucntion yo";
+	CHECK_INVARIANT(CONTROL_SHOULD_NOT_REACH, msg.str());
+}
+
+void Eval_Result_Value_Int::set_value(int number)
+{
+	value.i = number;
 	defined = true;
 }
 
-float Eval_Result_Value_Int::get_value()
+mytypes Eval_Result_Value_Int::get_value()
 {
 	return value;
 }
@@ -123,9 +144,9 @@ Result_Enum Eval_Result_Value_Int::get_result_enum()
 
 Eval_Result_Value_Float::Eval_Result_Value_Float()
 {
-	value = 0;
+	value.f = 0;
 	defined = false;
-	result_type = int_result;
+	result_type = float_result;
 }
 
 Eval_Result_Value_Float::~Eval_Result_Value_Float()
@@ -133,11 +154,18 @@ Eval_Result_Value_Float::~Eval_Result_Value_Float()
 
 void Eval_Result_Value_Float::set_value(float number)
 {
-	value = number;
+	value.f = number;
 	defined = true;
 }
 
-float Eval_Result_Value_Float::get_value()
+void Eval_Result_Value_Float::set_value(int number)
+{
+	stringstream msg;
+	msg << "No set_value() fucntion yo";
+	CHECK_INVARIANT(CONTROL_SHOULD_NOT_REACH, msg.str());
+}
+
+mytypes Eval_Result_Value_Float::get_value()
 {
 	return value;
 }
@@ -188,9 +216,9 @@ void Local_Environment::print(ostream & file_buffer)
 			else
 			{
 				if (vi->get_result_enum() == int_result)
-					file_buffer << VAR_SPACE << (*i).first << " : " << fixed << setprecision(0) << vi->get_value() << "\n";
+					file_buffer << VAR_SPACE << (*i).first << " : " << fixed << setprecision(0) << (vi->get_value()).i << "\n";
 				else if (vi->get_result_enum() == float_result)
-					file_buffer << VAR_SPACE << (*i).first << " : " << fixed << setprecision(2) << vi->get_value() << "\n";
+					file_buffer << VAR_SPACE << (*i).first << " : " << fixed << setprecision(2) << (vi->get_value()).f << "\n";
 			}
 		}
 	}

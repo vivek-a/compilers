@@ -246,18 +246,18 @@ variable_declaration:
 declaration:
 	INTEGER NAME
 	{
-	if (NOT_ONLY_PARSE)
-	{
-		CHECK_INVARIANT(($2 != NULL), "Name cannot be null");
+		if (NOT_ONLY_PARSE)
+		{
+			CHECK_INVARIANT(($2 != NULL), "Name cannot be null");
 
-		string name = *$2;
-		Data_Type type = int_data_type;
+			string name = *$2;
+			Data_Type type = int_data_type;
 
-		pair<Data_Type, string> * declar = new pair<Data_Type, string>(type, name);
+			pair<Data_Type, string> * declar = new pair<Data_Type, string>(type, name);
 
-		$$ = declar;
-	}
-	}
+			$$ = declar;
+		}
+	}	
 ;
 
 basic_block_list:

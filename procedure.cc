@@ -163,14 +163,14 @@ Eval_Result & Procedure::evaluate(ostream & file_buffer)
 		else
 		{
 			result = &(current_bb->evaluate(eval_env, file_buffer));
-			if(result->get_value() == 0)
+			if( (result->get_value()).i == 0)
 				current_bb = get_next_bb(*current_bb);
-			else if(result->get_value() == -1)
+			else if( (result->get_value()).i == -1)
 				break;
 			else 				
 				for(list<Basic_Block *>::iterator i = basic_block_list.begin(); i != basic_block_list.end(); i++)
 				{
-					if( (*i)->get_bb_number() == result->get_value())
+					if( (*i)->get_bb_number() == (result->get_value()).i )
 						current_bb = *i;		
 				}			
 		}
@@ -234,6 +234,7 @@ void Procedure::print_prologue(ostream & file_buffer)
 	sub $fp, $sp, 4\t\t# Update the frame pointer\n";
 
 	int size = local_symbol_table.get_size();
+	size = -size;
 	if (size > 0)
 		prologue << "\n\tsub $sp, $sp, " << size << "\t\t# Make space for the locals\n";
 	else
@@ -255,7 +256,7 @@ void Procedure::print_epilogue(ostream & file_buffer)
 	if (size > 0)
 		epilogue << "# Epilogue Begins\n\tadd $sp, $sp, " << size << "\n";
 	else
-		epilogue << "#Epilogue Begins\n\tadd $sp, $sp, 4\n";
+		epilogue << "# Epilogue Begins\n\tadd $sp, $sp, 4\n";
 
 	epilogue << "\tlw $fp, 0($sp)  \n\tjr        $31\t\t# Jump back to the operating system.\n# Epilogue Ends\n\n";
 

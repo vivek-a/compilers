@@ -32,6 +32,11 @@
 
 using namespace std;
 
+union mytypes {
+  int i;
+  float f;
+};
+
 typedef enum
 {
 	int_result,
@@ -48,8 +53,10 @@ protected:
 	Result_Enum result_type;
 
 public:
-	virtual float get_value();
 	virtual void set_value(float value);
+	virtual void set_value(int value);
+	virtual mytypes get_value();
+	
 
 	virtual bool is_variable_defined();
 	virtual void set_variable_status(bool def);
@@ -62,7 +69,8 @@ class Eval_Result_Value:public Eval_Result
 {
 public:
 	virtual void set_value(float number);
-	virtual float get_value();
+	virtual void set_value(int number);
+	virtual mytypes get_value();
 
 	virtual bool is_variable_defined() = 0;
 	virtual void set_variable_status(bool def) = 0;
@@ -73,14 +81,15 @@ public:
 
 class Eval_Result_Value_Int:public Eval_Result_Value
 {
-	int value;
+	mytypes value;
 	bool defined;
 public:
 	Eval_Result_Value_Int();
 	~Eval_Result_Value_Int();
 
 	void set_value(float number);
-	float get_value();
+	void set_value(int number);
+	mytypes get_value();
 
 	void set_variable_status(bool def);
 	bool is_variable_defined();
@@ -91,14 +100,15 @@ public:
 
 class Eval_Result_Value_Float:public Eval_Result_Value
 {
-	float value;
+	mytypes value;
 	bool defined;
 public:
 	Eval_Result_Value_Float();
 	~Eval_Result_Value_Float();
 
 	void set_value(float number);
-	float get_value();
+	void set_value(int number);
+	mytypes get_value();
 
 	void set_variable_status(bool def);
 	bool is_variable_defined();

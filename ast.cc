@@ -299,9 +299,9 @@ void Name_Ast::print_value(Local_Environment & eval_env, ostream & file_buffer)
 		// CHECK_INVARIANT((loc_var_val->get_result_enum() == int_result) || (loc_var_val->get_result_enum() == float_result), "Result type can only be int or float");
 		// file_buffer << loc_var_val->get_value() << "\n";
 		if (loc_var_val->get_result_enum() == int_result)
-			file_buffer  << fixed << setprecision(0) << loc_var_val->get_value() << "\n";
+			file_buffer  << fixed << setprecision(0) << (loc_var_val->get_value()).i << "\n";
 		else if (loc_var_val->get_result_enum() == float_result)
-			file_buffer  << fixed << setprecision(2) << loc_var_val->get_value() << "\n";
+			file_buffer  << fixed << setprecision(2) << (loc_var_val->get_value()).f << "\n";
 	}
 
 	else
@@ -313,9 +313,9 @@ void Name_Ast::print_value(Local_Environment & eval_env, ostream & file_buffer)
 			file_buffer << "0\n";
 		else
 			if(glob_var_val->get_result_enum()==int_result)
-				file_buffer << fixed << setprecision(0) << glob_var_val->get_value() << "\n";
+				file_buffer << fixed << setprecision(0) << (glob_var_val->get_value()).i << "\n";
 			else if(glob_var_val->get_result_enum()==float_result)
-				file_buffer << fixed << setprecision(2) << glob_var_val->get_value() << "\n";
+				file_buffer << fixed << setprecision(2) << (glob_var_val->get_value()).f << "\n";
 	}
 	file_buffer << "\n";
 }
@@ -347,11 +347,15 @@ void Name_Ast::set_value_of_evaluation(Local_Environment & eval_env, Eval_Result
 
 	if (variable_symbol_entry->get_data_type() == int_data_type)
 		i = new Eval_Result_Value_Int();
+	else if (variable_symbol_entry->get_data_type() == float_data_type)
+		i = new Eval_Result_Value_Float();
 	else
 		CHECK_INPUT_AND_ABORT(CONTROL_SHOULD_NOT_REACH, "Type of a name can be int/float only", lineno);
 
 	if (result.get_result_enum() == int_result)
-	 	i->set_value(result.get_value());
+	 	i->set_value( (result.get_value()).i );
+	else if (result.get_result_enum() == float_result)
+	 	i->set_value( (result.get_value()).f );
 	else
 		CHECK_INPUT_AND_ABORT(CONTROL_SHOULD_NOT_REACH, "Type of a name can be int/float only", lineno);
 
@@ -466,6 +470,13 @@ Eval_Result & Number_Ast<DATA_TYPE>::evaluate(Local_Environment & eval_env, ostr
 	if (node_data_type == int_data_type)
 	{
 		Eval_Result & result = *new Eval_Result_Value_Int();
+		result.set_value(constant);
+
+		return result;
+	}
+	else if (node_data_type == float_data_type)
+	{
+		Eval_Result & result = *new Eval_Result_Value_Float();
 		result.set_value(constant);
 
 		return result;
@@ -652,7 +663,7 @@ Eval_Result & if_else_stmt::evaluate(Local_Environment & eval_env, ostream & fil
 
 	Eval_Result & eval_relation = rel_expr->evaluate(eval_env, file_buffer);
 
-	if(eval_relation.get_value()){
+	if((eval_relation.get_value()).i) {
 		file_buffer<<"\n" << AST_SPACE << "Condition True : Goto (BB "<< lhs->get_BBnum() <<")\n";
 		result.set_value(lhs->get_BBnum());
 		return result;
@@ -768,32 +779,32 @@ Eval_Result & Relational_Expr_Ast::evaluate(Local_Environment & eval_env, ostrea
 
 	if(op == "LT")
 	{
-		if(result_lhs.get_value() < result_rhs.get_value())result.set_value(1);			
+		if( (result_lhs.get_value()).i < (result_rhs.get_value()).i)result.set_value(1);			
 		else result.set_value(0);
 	} 
 	else if(op == "GT") 
 	{
-		if(result_lhs.get_value() > result_rhs.get_value())result.set_value(1);			
+		if((result_lhs.get_value()).i > (result_rhs.get_value()).i)result.set_value(1);			
 		else result.set_value(0);
 	} 
 	else if(op == "LE")
 	{
-		if(result_lhs.get_value() <= result_rhs.get_value())result.set_value(1);			
+		if((result_lhs.get_value()).i <= (result_rhs.get_value()).i)result.set_value(1);			
 		else result.set_value(0);
 	} 
 	else if(op == "GE")
 	{
-		if(result_lhs.get_value() >= result_rhs.get_value())result.set_value(1);			
+		if((result_lhs.get_value()).i >= (result_rhs.get_value()).i)result.set_value(1);			
 		else result.set_value(0);
 	} 
 	else if(op == "EQ")
 	{
-		if(result_lhs.get_value() == result_rhs.get_value())result.set_value(1);			
+		if((result_lhs.get_value()).i == (result_rhs.get_value()).i)result.set_value(1);			
 		else result.set_value(0);
 	} 
 	else if(op == "NE")
 	{
-		if(result_lhs.get_value() != result_rhs.get_value())result.set_value(1);			
+		if((result_lhs.get_value()).i != (result_rhs.get_value()).i)result.set_value(1);			
 		else result.set_value(0);
 	} 
 	return result;	

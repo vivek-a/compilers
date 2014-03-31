@@ -125,6 +125,17 @@ void Symbol_Table::create(Local_Environment & local_global_variables_table)
 
 			local_global_variables_table.put_variable_value(*j, name);
 		}
+		else if ((*i)->get_data_type() == float_data_type)
+		{
+			Eval_Result * j = new Eval_Result_Value_Float();
+			if (scope == global)
+			{
+				j->set_variable_status(true);
+				j->set_value(0);
+			}
+
+			local_global_variables_table.put_variable_value(*j, name);
+		}
 	}
 }
 
@@ -144,6 +155,7 @@ void Symbol_Table::print(ostream & file_buffer)
 		switch(dt)
 		{
 		case int_data_type: file_buffer << " Type: INT"; break;
+		case float_data_type: file_buffer << " Type: FLOAT"; break;
 		defualt: CHECK_INVARIANT(CONTROL_SHOULD_NOT_REACH, "Variable data type can only be int");
 		} 
 
@@ -152,7 +164,7 @@ void Symbol_Table::print(ostream & file_buffer)
 		if (start_off == end_off)
 			file_buffer << " (No offset assigned yet)\n";
 		else
-			file_buffer << " Start Offset: " << start_off << " End Offset: " << end_off << "\n";
+			file_buffer << " Start Offset: " << -start_off << " End Offset: " << -end_off << "\n";
 	}
 }
 
@@ -194,7 +206,8 @@ int Symbol_Table::get_size_of_value_type(Data_Type dt)
 {
 	switch(dt)
 	{
-	case int_data_type: return 4; break;
+	case int_data_type: return -4; break;
+	case float_data_type: return -8; break;
 	case void_data_type: CHECK_INVARIANT(CONTROL_SHOULD_NOT_REACH, "Attempt to seek size of type void");
 	defualt: CHECK_INVARIANT(CONTROL_SHOULD_NOT_REACH, "Data type not supperted");
 	}
