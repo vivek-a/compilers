@@ -236,7 +236,7 @@ void Procedure::print_prologue(ostream & file_buffer)
 	int size = local_symbol_table.get_size();
 	size = -size;
 	if (size > 0)
-		prologue << "\n\tsub $sp, $sp, " << size << "\t\t# Make space for the locals\n";
+		prologue << "\n\tsub $sp, $sp, " << (size + 4) << "\t\t# Make space for the locals\n";
 	else
 		prologue << "\n\tsub $sp, $sp, 4\t\t#Make space for the locals\n";
 
@@ -253,10 +253,11 @@ void Procedure::print_epilogue(ostream & file_buffer)
 
 	int size = local_symbol_table.get_size();
 
+	size = -size;
 	if (size > 0)
-		epilogue << "# Epilogue Begins\n\tadd $sp, $sp, " << size << "\n";
+		epilogue << "# Epilogue Begins\n\tadd $sp, $sp, " << (size + 4) << "\n";
 	else
-		epilogue << "# Epilogue Begins\n\tadd $sp, $sp, 4\n";
+		epilogue << "#Epilogue Begins\n\tadd $sp, $sp, 4\n";
 
 	epilogue << "\tlw $fp, 0($sp)  \n\tjr        $31\t\t# Jump back to the operating system.\n# Epilogue Ends\n\n";
 
