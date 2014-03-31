@@ -26,6 +26,7 @@
 
 #include<string>
 #include<map>
+#include<iomanip>          
 
 #define VAR_SPACE "         "
 
@@ -34,6 +35,7 @@ using namespace std;
 typedef enum
 {
 	int_result,
+	float_result,
 	void_result
 } Result_Enum;
 
@@ -46,8 +48,8 @@ protected:
 	Result_Enum result_type;
 
 public:
-	virtual int get_int_value();
-	virtual void set_value(int value);
+	virtual float get_value();
+	virtual void set_value(float value);
 
 	virtual bool is_variable_defined();
 	virtual void set_variable_status(bool def);
@@ -59,8 +61,8 @@ public:
 class Eval_Result_Value:public Eval_Result
 {
 public:
-	virtual void set_value(int number);
-	virtual int get_int_value();
+	virtual void set_value(float number);
+	virtual float get_value();
 
 	virtual bool is_variable_defined() = 0;
 	virtual void set_variable_status(bool def) = 0;
@@ -77,8 +79,26 @@ public:
 	Eval_Result_Value_Int();
 	~Eval_Result_Value_Int();
 
-	void set_value(int number);
-	int get_int_value();
+	void set_value(float number);
+	float get_value();
+
+	void set_variable_status(bool def);
+	bool is_variable_defined();
+
+	void set_result_enum(Result_Enum res);
+	Result_Enum get_result_enum();
+};
+
+class Eval_Result_Value_Float:public Eval_Result_Value
+{
+	float value;
+	bool defined;
+public:
+	Eval_Result_Value_Float();
+	~Eval_Result_Value_Float();
+
+	void set_value(float number);
+	float get_value();
 
 	void set_variable_status(bool def);
 	bool is_variable_defined();

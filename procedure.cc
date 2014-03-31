@@ -163,14 +163,14 @@ Eval_Result & Procedure::evaluate(ostream & file_buffer)
 		else
 		{
 			result = &(current_bb->evaluate(eval_env, file_buffer));
-			if(result->get_int_value() == 0)
+			if(result->get_value() == 0)
 				current_bb = get_next_bb(*current_bb);
-			else if(result->get_int_value() == -1)
+			else if(result->get_value() == -1)
 				break;
 			else 				
 				for(list<Basic_Block *>::iterator i = basic_block_list.begin(); i != basic_block_list.end(); i++)
 				{
-					if( (*i)->get_bb_number() == result->get_int_value())
+					if( (*i)->get_bb_number() == result->get_value())
 						current_bb = *i;		
 				}			
 		}

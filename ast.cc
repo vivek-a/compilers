@@ -296,19 +296,26 @@ void Name_Ast::print_value(Local_Environment & eval_env, ostream & file_buffer)
 
 	else if (eval_env.is_variable_defined(variable_name) && loc_var_val != NULL)
 	{
-		CHECK_INVARIANT(loc_var_val->get_result_enum() == int_result, "Result type can only be int");
-		file_buffer << loc_var_val->get_int_value() << "\n";
+		// CHECK_INVARIANT((loc_var_val->get_result_enum() == int_result) || (loc_var_val->get_result_enum() == float_result), "Result type can only be int or float");
+		// file_buffer << loc_var_val->get_value() << "\n";
+		if (loc_var_val->get_result_enum() == int_result)
+			file_buffer  << fixed << setprecision(0) << loc_var_val->get_value() << "\n";
+		else if (loc_var_val->get_result_enum() == float_result)
+			file_buffer  << fixed << setprecision(2) << loc_var_val->get_value() << "\n";
 	}
 
 	else
 	{
-		CHECK_INVARIANT(glob_var_val->get_result_enum() == int_result, 
+		CHECK_INVARIANT( (glob_var_val->get_result_enum() == int_result) || (glob_var_val->get_result_enum() == float_result), 
 			"Result type can only be int and float");
 
 		if (glob_var_val == NULL)
 			file_buffer << "0\n";
 		else
-			file_buffer << glob_var_val->get_int_value() << "\n";
+			if(glob_var_val->get_result_enum()==int_result)
+				file_buffer << fixed << setprecision(0) << glob_var_val->get_value() << "\n";
+			else if(glob_var_val->get_result_enum()==float_result)
+				file_buffer << fixed << setprecision(2) << glob_var_val->get_value() << "\n";
 	}
 	file_buffer << "\n";
 }
@@ -344,7 +351,7 @@ void Name_Ast::set_value_of_evaluation(Local_Environment & eval_env, Eval_Result
 		CHECK_INPUT_AND_ABORT(CONTROL_SHOULD_NOT_REACH, "Type of a name can be int/float only", lineno);
 
 	if (result.get_result_enum() == int_result)
-	 	i->set_value(result.get_int_value());
+	 	i->set_value(result.get_value());
 	else
 		CHECK_INPUT_AND_ABORT(CONTROL_SHOULD_NOT_REACH, "Type of a name can be int/float only", lineno);
 
@@ -645,7 +652,7 @@ Eval_Result & if_else_stmt::evaluate(Local_Environment & eval_env, ostream & fil
 
 	Eval_Result & eval_relation = rel_expr->evaluate(eval_env, file_buffer);
 
-	if(eval_relation.get_int_value()){
+	if(eval_relation.get_value()){
 		file_buffer<<"\n" << AST_SPACE << "Condition True : Goto (BB "<< lhs->get_BBnum() <<")\n";
 		result.set_value(lhs->get_BBnum());
 		return result;
@@ -761,32 +768,32 @@ Eval_Result & Relational_Expr_Ast::evaluate(Local_Environment & eval_env, ostrea
 
 	if(op == "LT")
 	{
-		if(result_lhs.get_int_value() < result_rhs.get_int_value())result.set_value(1);			
+		if(result_lhs.get_value() < result_rhs.get_value())result.set_value(1);			
 		else result.set_value(0);
 	} 
 	else if(op == "GT") 
 	{
-		if(result_lhs.get_int_value() > result_rhs.get_int_value())result.set_value(1);			
+		if(result_lhs.get_value() > result_rhs.get_value())result.set_value(1);			
 		else result.set_value(0);
 	} 
 	else if(op == "LE")
 	{
-		if(result_lhs.get_int_value() <= result_rhs.get_int_value())result.set_value(1);			
+		if(result_lhs.get_value() <= result_rhs.get_value())result.set_value(1);			
 		else result.set_value(0);
 	} 
 	else if(op == "GE")
 	{
-		if(result_lhs.get_int_value() >= result_rhs.get_int_value())result.set_value(1);			
+		if(result_lhs.get_value() >= result_rhs.get_value())result.set_value(1);			
 		else result.set_value(0);
 	} 
 	else if(op == "EQ")
 	{
-		if(result_lhs.get_int_value() == result_rhs.get_int_value())result.set_value(1);			
+		if(result_lhs.get_value() == result_rhs.get_value())result.set_value(1);			
 		else result.set_value(0);
 	} 
 	else if(op == "NE")
 	{
-		if(result_lhs.get_int_value() != result_rhs.get_int_value())result.set_value(1);			
+		if(result_lhs.get_value() != result_rhs.get_value())result.set_value(1);			
 		else result.set_value(0);
 	} 
 	return result;	
