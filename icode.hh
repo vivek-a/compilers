@@ -41,6 +41,12 @@
 */
 
 typedef enum 
+{
+	int_opd,
+	float_opd
+} opd_type;
+
+typedef enum 
 {			/* a: assembly format; r: result; o1: opd1; o2: opd2; op: operator */
 	a_op,		/* Only the operator, no operand */
 	a_op_o1,	/* Only one operand, no result, eg. goto L */
@@ -52,6 +58,8 @@ typedef enum
 	a_op_o1_o2_r,	/* r <- o1 op o2 */
 	a_op_o1_o2_o3,
 	a_bne,
+	a_arith,
+	a_uminus,
 	a_nsy		/* not specified yet */
 } Assembly_Format;
 
@@ -67,6 +75,8 @@ typedef enum
 	i_r_o1_op_o2,	/* r <- o1 op o2 */ 
 	i_op_o1_o2_o3,
 	i_bne,
+	i_arith,
+	i_uminus,
 	i_nsy		/* not specified yet */
 } Icode_Format;
 
@@ -91,6 +101,13 @@ typedef enum
 	bne,
 	sne,
 	seq,
+	add,
+	sub,
+	mul,
+	divide,
+	uminus,
+	mfc1,
+	mtc1,
 	Goto
 
 } Tgt_Op;
@@ -147,6 +164,8 @@ public:
 
 	virtual void print_ics_opd(ostream & file_buffer) = 0;
 	virtual void print_asm_opd(ostream & file_buffer) = 0;
+
+	virtual opd_type get_opd();
 };
 
 class Mem_Addr_Opd:public Ics_Opd
@@ -156,7 +175,7 @@ class Mem_Addr_Opd:public Ics_Opd
 public:
 	Mem_Addr_Opd(Symbol_Table_Entry & se);
 	~Mem_Addr_Opd() {}
-
+	opd_type get_opd();
 	void print_ics_opd(ostream & file_buffer);
 	void print_asm_opd(ostream & file_buffer);
 
@@ -170,7 +189,7 @@ class Register_Addr_Opd: public Ics_Opd
 public:
 	Register_Addr_Opd(Register_Descriptor * rd);
 	~Register_Addr_Opd() {}
-
+	opd_type get_opd();
 	Register_Descriptor * get_reg();
 	void print_ics_opd(ostream & file_buffer);
 	void print_asm_opd(ostream & file_buffer);
@@ -186,7 +205,7 @@ class Const_Opd: public Ics_Opd
 public:
 	Const_Opd (T num);
 	~Const_Opd() {}
-
+	opd_type get_opd();
 	void print_ics_opd(ostream & file_buffer);
 	void print_asm_opd(ostream & file_buffer);
 

@@ -283,13 +283,20 @@ void Machine_Description::initialize_register_table()
 	spim_register_table[sp] = new Register_Descriptor(sp, "sp", int_num, pointer);
 	spim_register_table[fp] = new Register_Descriptor(fp, "fp", int_num, pointer);
 	spim_register_table[ra] = new Register_Descriptor(ra, "ra", int_num, ret_address);
+
+	spim_register_table[f2] = new Register_Descriptor(f2, "f2", float_num, gp_data);
+	spim_register_table[f4] = new Register_Descriptor(f4, "f4", float_num, gp_data);
+	spim_register_table[f6] = new Register_Descriptor(f6, "f6", float_num, gp_data);
+	spim_register_table[f8] = new Register_Descriptor(f8, "f8", float_num, gp_data);
+	spim_register_table[f10] = new Register_Descriptor(f10, "f10", float_num, gp_data);
+	spim_register_table[f12] = new Register_Descriptor(f12, "f12", float_num, gp_data);
 }
 
 void Machine_Description::initialize_instruction_table()
 {
-	spim_instruction_table[store] = new Instruction_Descriptor(store, "store", "sw", "", i_r_op_o1, a_op_o1_r);
-	spim_instruction_table[load] = new Instruction_Descriptor(load, "load", "lw", "", i_r_op_o1, a_op_r_o1);
-	spim_instruction_table[imm_load] = new Instruction_Descriptor(imm_load, "iLoad", "li", "", i_r_op_o1, a_op_r_o1);
+	spim_instruction_table[store] = new Instruction_Descriptor(store, "store", "sw", "s", i_r_op_o1, a_op_o1_r);
+	spim_instruction_table[load] = new Instruction_Descriptor(load, "load", "lw", "l", i_r_op_o1, a_op_r_o1);
+	spim_instruction_table[imm_load] = new Instruction_Descriptor(imm_load, "iLoad", "li", "li", i_r_op_o1, a_op_r_o1);
 	spim_instruction_table[slt] = new Instruction_Descriptor(slt, "slt", "slt", "", i_r_o1_op_o2, a_op_r_o1_o2);
 	spim_instruction_table[sgt] = new Instruction_Descriptor(sgt, "sgt", "sgt", "", i_r_o1_op_o2, a_op_r_o1_o2);
 	spim_instruction_table[sle] = new Instruction_Descriptor(sle, "sle", "sle", "", i_r_o1_op_o2, a_op_r_o1_o2);
@@ -297,6 +304,13 @@ void Machine_Description::initialize_instruction_table()
 	spim_instruction_table[seq] = new Instruction_Descriptor(seq, "seq", "seq", "", i_r_o1_op_o2, a_op_r_o1_o2);
 	spim_instruction_table[sne] = new Instruction_Descriptor(sne, "sne", "sne", "", i_r_o1_op_o2, a_op_r_o1_o2);
 	spim_instruction_table[bne] = new Instruction_Descriptor(bne, "bne", "bne", "", i_op_o1_o2_o3, a_op_o1_o2_o3);
+	spim_instruction_table[add] = new Instruction_Descriptor(add, "add", "add", "", i_arith, a_arith);
+	spim_instruction_table[sub] = new Instruction_Descriptor(sub, "sub", "sub", "", i_arith, a_arith);
+	spim_instruction_table[divide] = new Instruction_Descriptor(divide, "div", "div", "", i_arith, a_arith);
+	spim_instruction_table[mul] = new Instruction_Descriptor(mul, "mul", "mul", "", i_arith, a_arith);
+	spim_instruction_table[uminus] = new Instruction_Descriptor(uminus, "uminus", "neg", "", i_uminus, a_uminus);
+	spim_instruction_table[mfc1] = new Instruction_Descriptor(mfc1, "mfc1", "mfc1", "", i_uminus, a_uminus);
+	spim_instruction_table[mtc1] = new Instruction_Descriptor(mtc1, "mtc1", "mtc1", "", i_uminus, a_uminus);
 	spim_instruction_table[Goto] = new Instruction_Descriptor(Goto, "goto", "j", "", i_op_o1, a_op_o1);
 }
 
@@ -340,7 +354,7 @@ Register_Descriptor * Machine_Description::get_new_register()
 	{
 		reg_desc = i->second;
 
-		if (reg_desc->is_free())
+		if (reg_desc->is_free() && reg_desc->value_type == int_num)
 			return reg_desc;
 	}
 
@@ -354,7 +368,38 @@ Register_Descriptor * Machine_Description::get_new_register()
 	{
 		reg_desc = i->second;
 
-		if (reg_desc->is_free())
+		if (reg_desc->is_free() && reg_desc->value_type == int_num)
+			return reg_desc;
+	}
+
+	CHECK_INVARIANT(CONTROL_SHOULD_NOT_REACH, 
+			"Error in get_new_reg or register requirements of input program cannot be met");
+}
+
+Register_Descriptor * Machine_Description::get_new_float_register()
+{
+	Register_Descriptor * reg_desc;
+
+	map<Spim_Register, Register_Descriptor *>::iterator i;
+	for (i = spim_register_table.begin(); i != spim_register_table.end(); i++)
+	{
+		reg_desc = i->second;
+
+		if (reg_desc->is_free() && reg_desc->value_type == float_num)
+			return reg_desc;
+	}
+
+	for (i = spim_register_table.begin(); i != spim_register_table.end(); i++)
+	{
+		reg_desc = i->second;
+		reg_desc->clear_lra_symbol_list();
+	}
+
+	for (i = spim_register_table.begin(); i != spim_register_table.end(); i++)
+	{
+		reg_desc = i->second;
+
+		if (reg_desc->is_free() && reg_desc->value_type == float_num)
 			return reg_desc;
 	}
 

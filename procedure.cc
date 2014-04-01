@@ -213,7 +213,7 @@ void Procedure::print_assembly(ostream & file_buffer)
 	list<Basic_Block *>::iterator i;
 	for(i = basic_block_list.begin(); i != basic_block_list.end(); i++)
 	{
-		file_buffer<<"label"<<(*i)->get_bb_number()<<": \n";
+		file_buffer<<"label"<<(*i)->get_bb_number()<<":    \t\n";
 		(*i)->print_assembly(file_buffer);
 	}
 
