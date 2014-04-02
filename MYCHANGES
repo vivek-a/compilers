@@ -1,15 +1,11 @@
 110050039 Vivek Atulkar
 110050048 Sudipto Biswas
 
-lab 5b Compiler-Making
+lab 6a Compiler-Making
 
-Changes in  reg-alloc.cc ::
-Since in level 1 relational expression ast is introduced
-	new checks are implemented for Name_Ast
-
-Changes in ast.cc ::
-made functions compile_and optimize_ast for asts
-	goto
-	if_else
-	relational_expr 
-
+-grammer added for arithmetic expressions and typecasting and also unary expressions.
+-made asts for newly added grammer { Arith_expr_ast and TypeCast_expr_ast and Unary_expr_ast }.
+-wrote compile fuctions for all newly added asts.
+-float registers are made f2,f4...f30 in reg_alloc file.
+-for arithmetic expessions new Compute_Ic_Stmts are made.
+--add,sub,div,mul,uminus

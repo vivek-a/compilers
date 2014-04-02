@@ -45,7 +45,7 @@ typedef enum
 	t1, t2, t3, t4, t5, t6, t7, t8, t9, 
 	s0,	/* temporary callee-save registers */ 
 	s1, s2, s3, s4, s5, s6, s7,
-  f2,f4,f6,f8,f10,f12,
+  f2,f4,f6,f8,f10,f12,f14,f16,f18,f20,f22,f24,f26,f28,f30,
 	gp,	/* global data pointer register */
 	sp,	/* stack pointer register */
 	fp,	/* frame pointer register */
