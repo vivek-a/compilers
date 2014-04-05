@@ -161,7 +161,7 @@ void Lra_Outcome::optimize_lra(Lra_Scenario lcase, Ast * destination_memory, Ast
 			destination_register = NULL;
 		else
 		{
-			destination_symbol_entry = &(destination_memory->get_symbol_entry());
+			destination_symbol_entry = &(destination_memory->get_symbol_entry());			
 			destination_register = destination_symbol_entry->get_register(); 
 		}
 
@@ -187,7 +187,11 @@ void Lra_Outcome::optimize_lra(Lra_Scenario lcase, Ast * destination_memory, Ast
 		}
 		else 
 		{
-			result_register = machine_dscr_object.get_new_register();
+			if(destination_memory->get_data_type() == int_data_type)
+				result_register = machine_dscr_object.get_new_register();
+			else
+				result_register = machine_dscr_object.get_new_float_register();
+
 			is_a_new_register = true;
 			load_needed = true;
 		}
@@ -214,7 +218,11 @@ void Lra_Outcome::optimize_lra(Lra_Scenario lcase, Ast * destination_memory, Ast
 		}
 		else 
 		{
-			result_register = machine_dscr_object.get_new_register();
+			if(source_memory->get_data_type() == int_data_type)
+				result_register = machine_dscr_object.get_new_register();
+			else
+				result_register = machine_dscr_object.get_new_float_register();
+
 			is_a_new_register = true;
 			load_needed = true;
 		}
