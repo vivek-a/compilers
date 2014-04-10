@@ -24,18 +24,54 @@
 #ifndef PARSER_IH
 #define PARSER_IH
 
+#include <typeinfo>
+
+#include "common-classes.hh"
 #include "local-environment.hh"
 #include "error-display.hh"
 #include "user-options.hh"
-
+#include "icode.hh"
+#include "reg-alloc.hh"
 #include "symbol-table.hh"
-
 #include "ast.hh"
 #include "basic-block.hh"
 #include "procedure.hh"
 #include "program.hh"
-
 #include "parser.h"
+
+////////////////// Parser bb_existence_check function ////////////////////////
+
+void Parser::bb_existence_check(list<Basic_Block *> * bb_list ,vector<int> goto_list,int line)
+{
+  vector<int> goto_blocks= goto_list;
+
+  int flag,num;
+
+  list<Basic_Block *>::iterator i;  
+
+  for(int j=0;j< goto_blocks.size();j++ ){
+    flag=0;    
+    for(i = bb_list->begin(); i != bb_list->end(); i++)
+    {
+      if ((*i)->get_bb_number() == goto_blocks[j]){
+        flag=1;
+        break;               
+      }
+      num=goto_blocks[j];
+    }
+    
+    if(flag==0)
+    {        
+        int line = get_line_number();
+        string s;
+        s="bb ";
+        s+=to_string(num);
+        s+=" doesn't exist";
+        CHECK_INVARIANT(false,s);
+    }
+  }
+}
+
 
 ////////////////////// cfglp Parser functions ///////////////////////
 
@@ -81,83 +117,8 @@ inline void Parser::bb_strictly_increasing_order_check(list<Basic_Block *> * bb_
 {
 	list<Basic_Block *>::iterator i;
 	for(i = bb_list->begin(); i != bb_list->end(); i++)
-	{
-		if ((*i)->get_bb_number() >= bb_number)
-		{
-			int line = get_line_number();
-			report_error("basic_block should be in strictly increasing order", get_line_number());
-		}
-	}
+		CHECK_INPUT(((*i)->get_bb_number() < bb_number), "Basic blocks should be in strictly increasing order", get_line_number());
 }
-
-///////////////////////////////////////////////////////////////////
-
-
-////////////////// Parser bb_existence_check function ////////////////////////
-
-inline void Parser::bb_existence_check(list<Basic_Block *> * bb_list ,vector<int> goto_list)
-{
-  vector<int> goto_blocks= goto_list;
-
-  int flag,num;
-
-  list<Basic_Block *>::iterator i;  
-
-  for(int j=0;j< goto_blocks.size();j++ ){
-    flag=0;    
-    for(i = bb_list->begin(); i != bb_list->end(); i++)
-    {
-      if ((*i)->get_bb_number() == goto_blocks[j]){
-        flag=1;
-        break;               
-      }
-      num=goto_blocks[j];
-    }
-    
-    if(flag==0)
-    {        
-        int line = get_line_number();
-        string s;
-        s="bb ";
-        s+=to_string(num);
-        s+=" doesn't exist";
-        report_error(s, NOLINE);
-    }
-  }
-}
-
-////////////////// Parser return_statement_check function ////////////////////////
-
-// inline void Parser::return_statement_check(list<Basic_Block *> * bb_list)
-// {
-
-//   //cout<<"size of bb list is  : " << bb_list->size()<<"\n";
-
-//   list<Basic_Block *>::iterator i;
-//   list<Basic_Block *>::iterator last_bb;
-
-//   for(i = bb_list->begin(); i != bb_list->end(); i++){
-//     last_bb=i;
-//   }
-
-//   list <Ast *> last_bb_list = (*last_bb)->get_bb_statement_list() ;
-//   list <Ast *>::iterator j;
-//   list <Ast *>::iterator last_ast;
-
-//   for (j = last_bb_list.begin(); j != last_bb_list.end(); j++){
-//     last_ast = j;
-//   }
-
-//   //cout << " last ast return check is : " << (*last_ast)->get_return_check() <<endl;
-
-//   if( (*last_ast)->get_return_check() == 0 )
-//   {          
-//     report_internal_error("Atleast one of true, false, direct successors should be set");
-//   }
-
-// }
-
-
 
 ///////////////////////////////////////////////////////////////////
 

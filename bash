@@ -1,14 +1,16 @@
 
 # !/bin/bash
 
+make -f Makefile.cfglp
+
 rm -rf tmp
 mkdir tmp
 
-for file in "test_files"/*.c 
-do
-	file=`echo $file | cut -d '/' -f2`
-	make -f Makefile.cfg FILE=$file
-done
+# for file in "test_files"/*.c 
+# do
+# 	file=`echo $file | cut -d '/' -f2`
+# 	make -f Makefile.cfg FILE=$file
+# done
 
 echo "\nProcessing correct files"
 echo "-------------------------\n"
@@ -18,21 +20,21 @@ do
 	echo $file
 	f=`echo $file | cut -d '/' -f2`
 	f=`echo $f | cut -d '.' -f1`
-	./cfglp $file  -tokens -ast -d > out1
-	./cfglp64 $file -tokens -ast -d > out2
-	diff out1 out2  > tmp/$f
+	./cfglp $file  -d -tokens -tokens -ast -eval > out1
+	./cfglp64 $file  -d -tokens -tokens -ast -eval > out2
+	diff  out1 out2  > tmp/$f
 done
 
 # echo "\n\nProcessing error files"
 # echo "-----------------------\n"
 
-# for file in "test_files"/*.e* 
+# for file in "test_files"/*.ecfg 
 # do
 # 	echo $file
 # 	f=`echo $file | cut -d '/' -f2`
 # 	f=`echo $f | cut -d '.' -f1`
-# 	./cfglp $file -tokens -ast -eval -d > out1
-# 	./cfglp64 $file -tokens -ast -eval -d > out2
+# 	./cfglp $file -icode -tokens -ast -lra  -d > out1
+# 	./cfglp64 $file -icode -tokens -ast -lra  -d > out2
 # 	diff out1 out2 > tmp/$f
 # 	echo "-------------------------------------------"
 # done

@@ -1,24 +1,6 @@
 110050039 Vivek Atulkar
 110050048 Sudipto Biswas
 
-Part-4b
+lab 6b Compiler-Making
 
-function_call ast is made.
-
-return ast is modified to manage returning of int/float expressions.
-
-return_check flag is inserted in a procedure to tell program to jump out on return.
-
-new symbol table params_list is added in a procedure which contains symbol_list functions parameters.
-
-Checks::
-1.Procedure corresponding to the name is not found
-2.check_if_prototype_exist
-3.variable_in_symbol_list_check
-4.Last return statement type, of procedure, and its prototype should match
-5.Variable name cannot be same as procedure name
-6.Overloading of the procedure is not allowed
-7.Formal Parameter declared twice
-8.Formal parameter list cannot be same as function name
-9. Actual and formal parameter count do not match
-10. Formal parameter and local variable name cannot be same
+-compile_and_optimize_ast function written for all asts.

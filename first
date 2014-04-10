@@ -1,2 +1,0 @@
-g++ --std=c++0x -g  -c program.cc
-g++ --std=c++0x scanner.o parser.o error-display.o main.o user-options.o local-environment.o ast.o procedure.o basic-block.o program.o symbol-table.o -o cfglp

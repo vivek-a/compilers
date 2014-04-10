@@ -37,20 +37,29 @@ class Basic_Block;
 class Basic_Block
 {
 	int id_number;
-  bool successor;
-	list<Ast *> statement_list;
+
+	list<Icode_Stmt *> bb_icode_list;
+
+	int lineno;
 
 public:
-	Basic_Block(int basic_block_number, list<Ast *> & ast_list, bool succ);
-  bool get_successor();
-  void set_successor(bool val);
+
+	list<Ast *> statement_list;
+
+	Basic_Block(int basic_block_number, int line);
 	~Basic_Block();
 
 	int get_bb_number();
-  list<Ast *> get_bb_statement_list();
+	void set_ast_list(list<Ast *> & ast_list);
+
 	void print_bb(ostream & file_buffer);
 
 	Eval_Result & evaluate(Local_Environment & eval_env, ostream & file_buffer);
+
+	// compile
+	void compile();
+	void print_assembly(ostream & file_buffer);
+	void print_icode(ostream & file_buffer);
 };
 
 #endif

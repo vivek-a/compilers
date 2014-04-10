@@ -49,19 +49,24 @@ public:
 	bool check_if_prototype_exist(string * proc,Symbol_Table * sym_table);
 	bool input_params_type_check(Procedure * proc , list<Ast *>  input_params);
 
-	void set_procedure_map(Procedure & proc);
+	void set_procedure_map(Procedure * proc, int line);
 	void set_global_table(Symbol_Table & new_global_table);
 
 	Symbol_Table_Entry & get_symbol_table_entry(string variable);
 
-	void print_ast();
+	void print();
 
 	Procedure * get_main_procedure(ostream & file_buffer);
 	Procedure * get_procedure(string proc_name);
 	Eval_Result & evaluate();
 
+	bool variable_in_proc_map_check(string symbol);
 	bool variable_in_symbol_list_check(string variable);
-	void variable_in_proc_map_check(string symbol, int line);
+	void global_list_in_proc_map_check();
+
+	// compile
+	void compile();
+	void print_assembly();
 };
 
 #endif
