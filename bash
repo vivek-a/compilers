@@ -1,8 +1,6 @@
 
 # !/bin/bash
 
-make -f Makefile.cfglp
-
 rm -rf tmp
 mkdir tmp
 
@@ -20,21 +18,21 @@ do
 	echo $file
 	f=`echo $file | cut -d '/' -f2`
 	f=`echo $f | cut -d '.' -f1`
-	./cfglp $file  -d -tokens -tokens -ast -icode -lra > out1
-	./cfglp64 $file  -d -tokens -tokens -ast -icode -lra > out2
+	./cfglp $file  -tokens -ast -d > out1
+	./cfglp64 $file -tokens -ast -d > out2
 	diff out1 out2  > tmp/$f
 done
 
 # echo "\n\nProcessing error files"
 # echo "-----------------------\n"
 
-# for file in "test_files"/*.ecfg 
+# for file in "test_files"/*.e* 
 # do
 # 	echo $file
 # 	f=`echo $file | cut -d '/' -f2`
 # 	f=`echo $f | cut -d '.' -f1`
-# 	./cfglp $file -icode -tokens -ast -lra  -d > out1
-# 	./cfglp64 $file -icode -tokens -ast -lra  -d > out2
+# 	./cfglp $file -tokens -ast -eval -d > out1
+# 	./cfglp64 $file -tokens -ast -eval -d > out2
 # 	diff out1 out2 > tmp/$f
 # 	echo "-------------------------------------------"
 # done
