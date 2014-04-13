@@ -329,6 +329,9 @@ void Machine_Description::initialize_instruction_table()
 	spim_instruction_table[mfc1] = new Instruction_Descriptor(mfc1, "mfc1", "mfc1", "", i_uminus, a_uminus);
 	spim_instruction_table[mtc1] = new Instruction_Descriptor(mtc1, "mtc1", "mtc1", "", i_uminus, a_uminus);
 	spim_instruction_table[Goto] = new Instruction_Descriptor(Goto, "goto", "j", "", i_op_o1, a_op_o1);
+	spim_instruction_table[call] = new Instruction_Descriptor(call, "call", "jal", "", i_call, a_call);
+	spim_instruction_table[moveit] = new Instruction_Descriptor(moveit, "move", "move", "", i_move, a_move);
+	spim_instruction_table[ret] = new Instruction_Descriptor(ret, "goto epilogue", "j epilogue", "", i_ret, a_ret);
 }
 
 void Machine_Description::validate_init_local_register_mapping()
@@ -423,3 +426,23 @@ Register_Descriptor * Machine_Description::get_new_float_register()
 	CHECK_INVARIANT(CONTROL_SHOULD_NOT_REACH, 
 			"Error in get_new_reg or register requirements of input program cannot be met");
 }
+
+// Register_Descriptor * Machine_Description::get_new_arg_register()
+// {
+// 	Register_Descriptor * reg_desc;
+
+// 	( == gp_data) && (lra_symbol_list.empty()) && (!used_for_expr_result)
+
+// 	map<Spim_Register, Register_Descriptor *>::iterator i;
+// 	for (i = spim_register_table.begin(); i != spim_register_table.end(); i++)
+// 	{
+// 		reg_desc = i->second;
+
+// 		if (reg_desc->reg_use==argument && reg_desc->value_type == float_num )
+// 			return reg_desc;
+// 	}
+
+// 	CHECK_INVARIANT(CONTROL_SHOULD_NOT_REACH, 
+// 			"Error in get_new_asrg_reg or register requirements of input program cannot be met");
+// }
+

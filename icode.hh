@@ -60,6 +60,9 @@ typedef enum
 	a_bne,
 	a_arith,
 	a_uminus,
+	a_ret,
+	a_call,
+	a_move,
 	a_nsy		/* not specified yet */
 } Assembly_Format;
 
@@ -77,6 +80,9 @@ typedef enum
 	i_bne,
 	i_arith,
 	i_uminus,
+	i_ret,
+	i_call,
+	i_move,
 	i_nsy		/* not specified yet */
 } Icode_Format;
 
@@ -108,7 +114,10 @@ typedef enum
 	uminus,
 	mfc1,
 	mtc1,
-	Goto
+	Goto,
+	call,
+	ret,
+	moveit
 
 } Tgt_Op;
 
@@ -166,7 +175,8 @@ public:
 	virtual void print_asm_opd(ostream & file_buffer) = 0;
 
 	virtual opd_type get_opd();
-};
+	virtual string get_opd_name(){}
+}; 
 
 class Mem_Addr_Opd:public Ics_Opd
 {
@@ -180,6 +190,7 @@ public:
 	void print_asm_opd(ostream & file_buffer);
 
 	Mem_Addr_Opd & operator= (const Mem_Addr_Opd & rhs);
+	string get_opd_name(){return "mem_opd";}
 };
 
 class Register_Addr_Opd: public Ics_Opd
@@ -195,6 +206,7 @@ public:
 	void print_asm_opd(ostream & file_buffer);
 
 	Register_Addr_Opd & operator=(const Register_Addr_Opd & rhs);
+	string get_opd_name();
 };
 
 template <class T>
@@ -208,8 +220,8 @@ public:
 	opd_type get_opd();
 	void print_ics_opd(ostream & file_buffer);
 	void print_asm_opd(ostream & file_buffer);
-
-	Const_Opd & operator=(const Const_Opd & rhs);
+	string get_opd_name(){return "const_opd";}
+	Const_Opd & operator=(const Const_Opd & rhs);	
 };
 
 ///////////////////////////////// Intermediate code statements //////////////////////////

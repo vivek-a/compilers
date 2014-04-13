@@ -126,6 +126,11 @@ Register_Addr_Opd& Register_Addr_Opd::operator=(const Register_Addr_Opd& rhs)
 	return *this;
 }
 
+string Register_Addr_Opd::get_opd_name()
+{
+	return (*register_description).get_name();
+}
+
 void Register_Addr_Opd::print_ics_opd(ostream & file_buffer) 
 {
 	CHECK_INVARIANT((register_description != NULL), "Register cannot be null");
@@ -274,6 +279,15 @@ void Move_IC_Stmt::print_icode(ostream & file_buffer)
 			file_buffer << "\n";
 
 			break;
+	case i_move:
+			file_buffer << "\t" << operation_name ;
+			file_buffer << ":    \t";
+			result->print_ics_opd(file_buffer);
+			file_buffer << " <- ";
+			opd1->print_ics_opd(file_buffer);
+			file_buffer << "\n";
+
+			break;
 
 	default: CHECK_INVARIANT(CONTROL_SHOULD_NOT_REACH, 
 				"Intermediate code format not supported");
@@ -312,6 +326,16 @@ void Move_IC_Stmt::print_assembly(ostream & file_buffer)
 			opd1->print_asm_opd(file_buffer);
 			file_buffer << ", ";
 			result->print_asm_opd(file_buffer);
+			file_buffer << "\n";
+
+			break; 
+
+	case a_move:
+			file_buffer << "\t" << op_name;
+			file_buffer << " ";
+			result->print_asm_opd(file_buffer);
+			file_buffer << ", ";
+			opd1->print_asm_opd(file_buffer);
 			file_buffer << "\n";
 
 			break; 
@@ -358,51 +382,53 @@ void Compute_IC_Stmt::print_icode(ostream & file_buffer)
 	CHECK_INVARIANT (result, "Result cannot be NULL for a compute IC Stmt");
 
 	string operation_name = op_desc.get_name();
+	if(result->get_opd_name()!="sp"){
+		Icode_Format ic_format = op_desc.get_ic_format();
 
-	Icode_Format ic_format = op_desc.get_ic_format();
+		switch (ic_format)
+		{
+			case i_r_o1_op_o2: 
+				CHECK_INVARIANT (opd2, "Opd2 cannot be NULL for a compute IC Stmt");
 
-	switch (ic_format)
-	{
-		case i_r_o1_op_o2: 
-			CHECK_INVARIANT (opd2, "Opd2 cannot be NULL for a compute IC Stmt");
-			file_buffer << "\t" << operation_name ;
-			if(result->get_opd()==float_opd)file_buffer << ".d";
-			file_buffer << ":    \t";
-			result->print_ics_opd(file_buffer);
-			file_buffer << " <- ";
-			opd1->print_ics_opd(file_buffer);
-			file_buffer << " , ";
-			opd2->print_ics_opd(file_buffer);
-			file_buffer << "\n";
+				file_buffer << "\t" << operation_name ;
+				if(result->get_opd()==float_opd)file_buffer << ".d";
+				file_buffer << ":    \t";
+				result->print_ics_opd(file_buffer);
+				file_buffer << " <- ";
+				opd1->print_ics_opd(file_buffer);
+				file_buffer << " , ";
+				opd2->print_ics_opd(file_buffer);
+				file_buffer << "\n";
 
-			break; 
+				break; 
 
-		case i_arith:
-			CHECK_INVARIANT (opd2, "Opd2 cannot be NULL for a compute IC Stmt");
-			file_buffer << "\t" << operation_name;
-			if(result->get_opd()==float_opd)file_buffer << ".d";
-			file_buffer <<":    \t";
-			result->print_ics_opd(file_buffer);
-			file_buffer << " <- ";
-			opd1->print_ics_opd(file_buffer);
-			file_buffer << " , ";
-			opd2->print_ics_opd(file_buffer);
-			file_buffer << "\n";
-			break; 
+			case i_arith:
+				CHECK_INVARIANT (opd2, "Opd2 cannot be NULL for a compute IC Stmt");
+				file_buffer << "\t" << operation_name;
+				if(result->get_opd()==float_opd)file_buffer << ".d";
+				file_buffer <<":    \t";
+				result->print_ics_opd(file_buffer);
+				file_buffer << " <- ";
+				opd1->print_ics_opd(file_buffer);
+				file_buffer << " , ";
+				opd2->print_ics_opd(file_buffer);
+				file_buffer << "\n";
+				break; 
 
-		case i_uminus:
-			file_buffer << "\t" << operation_name ;
-			if(result->get_opd()==float_opd && operation_name!="mfc1" && operation_name!="mtc1" )file_buffer << ".d";
-			file_buffer <<":    \t";
-			result->print_ics_opd(file_buffer);
-			file_buffer << " <- ";
-			opd1->print_ics_opd(file_buffer);
-			file_buffer << "\n";
-			break; 
+			case i_uminus:
+				file_buffer << "\t" << operation_name ;
+				if(result->get_opd()==float_opd && operation_name!="mfc1" && operation_name!="mtc1" )file_buffer << ".d";
+				file_buffer <<":    \t";
+				result->print_ics_opd(file_buffer);
+				file_buffer << " <- ";
+				opd1->print_ics_opd(file_buffer);
+				file_buffer << "\n";
+				break; 
 
-	default: CHECK_INVARIANT(CONTROL_SHOULD_NOT_REACH, 
-				"Intermediate code format not supported");
-		break;
+		default: CHECK_INVARIANT(CONTROL_SHOULD_NOT_REACH, 
+					"Intermediate code format not supported");
+			break;
+		}
 	}
 }
 
@@ -488,8 +514,6 @@ Control_Flow_IC_Stmt& Control_Flow_IC_Stmt::operator=(const Control_Flow_IC_Stmt
 
 void Control_Flow_IC_Stmt::print_icode(ostream & file_buffer)
 {
-	CHECK_INVARIANT (opd3, "Opd3 cannot be NULL for a control_Flow IC Stmt");
-
 	string operation_name = op_desc.get_name();
 
 	Icode_Format ic_format = op_desc.get_ic_format();
@@ -497,6 +521,7 @@ void Control_Flow_IC_Stmt::print_icode(ostream & file_buffer)
 	switch (ic_format)
 	{
 		case i_op_o1_o2_o3: 
+			CHECK_INVARIANT (opd3, "Opd3 cannot be NULL for a control_Flow IC Stmt");
 			file_buffer << "\t" << operation_name << ":    \t";
 			opd1->print_ics_opd(file_buffer);
 			file_buffer << " , ";
@@ -507,13 +532,26 @@ void Control_Flow_IC_Stmt::print_icode(ostream & file_buffer)
 
 			break; 
 		case i_op_o1: 
+			CHECK_INVARIANT (opd3, "Opd3 cannot be NULL for a control_Flow IC Stmt");
 			file_buffer << "\t" << operation_name << " label";
 			opd3->print_ics_opd(file_buffer);
 			file_buffer << "\n";
 
 			break; 
 
-		
+		case i_call:
+			CHECK_INVARIANT (opd3, "Opd3 cannot be NULL for a control_Flow IC Stmt");
+			file_buffer << "\t" << operation_name << " ";
+			opd3->print_ics_opd(file_buffer);
+			file_buffer << "\n";
+
+			break; 
+
+		case i_ret:
+			file_buffer << "\t" << operation_name;			
+			file_buffer << "\n";
+
+			break; 
 
 	default: CHECK_INVARIANT(CONTROL_SHOULD_NOT_REACH, 
 				"Intermediate code format not supported");
@@ -523,14 +561,13 @@ void Control_Flow_IC_Stmt::print_icode(ostream & file_buffer)
 
 void Control_Flow_IC_Stmt::print_assembly(ostream & file_buffer)
 {
-	CHECK_INVARIANT (opd3, "Opd3 cannot be NULL for a control_Flow IC Stmt");
-
 	string op_name = op_desc.get_mnemonic();
 
 	Assembly_Format assem_format = op_desc.get_assembly_format();
 	switch (assem_format)
 	{
 		case a_op_o1_o2_o3: 
+			CHECK_INVARIANT (opd3, "Opd3 cannot be NULL for a control_Flow IC Stmt");
 			file_buffer << "\t" << op_name<<" ";
 			opd1->print_asm_opd(file_buffer);
 			file_buffer << ", ";
@@ -541,10 +578,25 @@ void Control_Flow_IC_Stmt::print_assembly(ostream & file_buffer)
 			break; 
 
 		case a_op_o1: 
+			CHECK_INVARIANT (opd3, "Opd3 cannot be NULL for a control_Flow IC Stmt");
 			file_buffer << "\t" << op_name << " label";
 			opd3->print_asm_opd(file_buffer);
 			file_buffer << "\n";
 			break;  
+
+		case a_call:
+			CHECK_INVARIANT (opd3, "Opd3 cannot be NULL for a control_Flow IC Stmt");
+			file_buffer << "\t" << op_name << " ";
+			opd3->print_asm_opd(file_buffer);
+			file_buffer << "\n";
+
+			break; 
+
+		case a_ret:
+			file_buffer << "\t" << op_name;			
+			file_buffer << "\n";
+
+			break; 
 
 	default: CHECK_INVARIANT(CONTROL_SHOULD_NOT_REACH, "Intermediate code format not supported");
 		break;
@@ -622,3 +674,4 @@ Instruction_Descriptor::Instruction_Descriptor()
 
 template class Const_Opd<int>;
 template class Const_Opd<float>;
+template class Const_Opd<string>;

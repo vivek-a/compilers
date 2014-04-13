@@ -586,13 +586,36 @@ Eval_Result & Return_Ast::evaluate(Local_Environment & eval_env, ostream & file_
 
 Code_For_Ast & Return_Ast::compile()
 {
-	Code_For_Ast & ret_code = *new Code_For_Ast();
+	list<Icode_Stmt *> ic_list;
+
+	if(lhs)
+	{
+		Code_For_Ast & load_stmt = lhs->compile();
+		Register_Descriptor * load_register = load_stmt.get_reg();
+		ic_list = load_stmt.get_icode_list();
+
+		Ics_Opd *  v_one_opd  = new Register_Addr_Opd(machine_dscr_object.spim_register_table[v1]);
+		Ics_Opd *  v_zero_opd  = new Register_Addr_Opd(machine_dscr_object.spim_register_table[v0]);
+		Icode_Stmt * m_stmt = new Move_IC_Stmt(moveit,v_zero_opd,v_one_opd);
+		ic_list.push_back(m_stmt);
+	}
+	Icode_Stmt * goto_stmt = new Control_Flow_IC_Stmt(ret,NULL,NULL,NULL);
+	ic_list.push_back(goto_stmt);
+
+	Code_For_Ast & ret_code = *new Code_For_Ast(ic_list, NULL);
+
 	return ret_code;
 }
 
 Code_For_Ast & Return_Ast::compile_and_optimize_ast(Lra_Outcome & lra)
 {
-	Code_For_Ast & ret_code = *new Code_For_Ast();
+	Icode_Stmt * goto_stmt = new Control_Flow_IC_Stmt(ret,NULL,NULL,NULL);
+
+	list<Icode_Stmt *> ic_list;
+	ic_list.push_back(goto_stmt);
+
+	Code_For_Ast & ret_code = *new Code_For_Ast(ic_list, NULL);
+
 	return ret_code;
 }
 
@@ -1596,17 +1619,71 @@ Eval_Result & Fn_Call_Ast::evaluate(Local_Environment & eval_env, ostream & file
 
 Code_For_Ast & Fn_Call_Ast::compile()
 {
+	list<Icode_Stmt *> & ic_list = *new list<Icode_Stmt *>;
 
-	Code_For_Ast * assign_stmt;
+	Ics_Opd * size_opd = new Const_Opd<int>( proc->get_params_list().get_size() * -1 );
 
-	return *assign_stmt;
+	Ics_Opd *  sp_opd  = new Register_Addr_Opd(machine_dscr_object.spim_register_table[sp]);	
+
+	list<Ast *>::reverse_iterator i;
+	list<Symbol_Table_Entry *>::reverse_iterator j;
 	
+	if(var_list){
+		for(i=var_list->rbegin() , j= proc->get_params_list().get_symbol_table().rbegin() ; i!=var_list->rend() ;  i++,j++)
+		{	
+			string temp = (*j)->get_variable_name();
+			
+			Ast * lhs = new Name_Ast( temp , *(*j) , lineno );
+
+			Code_For_Ast & load_stmt = (*i)->compile();
+
+			Register_Descriptor * load_register = load_stmt.get_reg();
+
+			Code_For_Ast store_stmt = lhs->create_store_stmt(load_register);
+
+			if (load_stmt.get_icode_list().empty() == false)
+				ic_list.splice(ic_list.end(), load_stmt.get_icode_list());
+
+			if (store_stmt.get_icode_list().empty() == false)
+				ic_list.splice(ic_list.end(), store_stmt.get_icode_list());
+		}
+	}
+
+	Icode_Stmt * sp_sub = new Compute_IC_Stmt(sub,sp_opd,size_opd,sp_opd);
+	ic_list.push_back(sp_sub);
+
+	Ics_Opd * ra_opd = new Const_Opd<string>(proc->get_proc_name());
+	Icode_Stmt * goto_stmt = new Control_Flow_IC_Stmt(call,NULL,NULL,ra_opd);
+	ic_list.push_back(goto_stmt);
+
+	Icode_Stmt * sp_add = new Compute_IC_Stmt(add,sp_opd,size_opd,sp_opd);
+	ic_list.push_back(sp_add);
+
+	if(proc->get_return_type()!=void_data_type){
+		Ics_Opd *  v_one_opd  = new Register_Addr_Opd(machine_dscr_object.spim_register_table[v1]);
+		Ics_Opd *  v_zero_opd  = new Register_Addr_Opd(machine_dscr_object.spim_register_table[v0]);
+		Icode_Stmt * m_stmt = new Move_IC_Stmt(moveit,v_one_opd,v_zero_opd);
+		ic_list.push_back(m_stmt);
+	}
+	
+	Code_For_Ast & ret_code = *new Code_For_Ast(ic_list, NULL);
+
+	return ret_code;	
 }
 
 Code_For_Ast & Fn_Call_Ast::compile_and_optimize_ast(Lra_Outcome & lra)
 {
 
-	Code_For_Ast * assign_stmt;
+	Ics_Opd * ra_opd = new Const_Opd<string>(proc->get_proc_name());
 
-	return *assign_stmt;
+	Icode_Stmt * goto_stmt = new Control_Flow_IC_Stmt(call,NULL,NULL,ra_opd);
+
+	list<Icode_Stmt *> ic_list;
+	ic_list.push_back(goto_stmt);
+
+
+
+	Code_For_Ast & ret_code = *new Code_For_Ast(ic_list, NULL);
+
+	return ret_code;	
 }

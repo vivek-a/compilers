@@ -56,7 +56,7 @@ public:
 	vector<int> get_goto_list();
 	void add_to_goto_list(int num);
 
-	Symbol_Table get_params_list();
+	Symbol_Table & get_params_list();
 	void set_params_list(Symbol_Table & params_list);
 
 	string get_proc_name();

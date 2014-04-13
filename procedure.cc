@@ -54,7 +54,7 @@ Procedure::~Procedure()
 		delete (*i);
 }
 
-Symbol_Table Procedure::get_params_list()
+Symbol_Table & Procedure::get_params_list()
 {
 	return this->params_list;
 }
@@ -253,6 +253,10 @@ void Procedure::compile()
 	local_symbol_table.set_size(4);
 	local_symbol_table.assign_offsets();
 
+	params_list.set_start_offset_of_first_symbol(4);
+	params_list.set_size(4);
+	params_list.assign_offsets();
+
 	// compile the program by visiting each basic block
 	list<Basic_Block *>::iterator i;
 	for(i = basic_block_list.begin(); i != basic_block_list.end(); i++)
@@ -293,15 +297,18 @@ void Procedure::print_prologue(ostream & file_buffer)
 
 	prologue << name << ":\t\t\t\t# .globl makes main know to the \n\t\t\t\t# outside of the program.\n\
 # Prologue begins \n\
-	sw $fp, 0($sp)\t\t# Save the frame pointer\n\
-	sub $fp, $sp, 4\t\t# Update the frame pointer\n";
+	sw $ra, 0($sp)\t\t# Save the return address\n\
+	sw $fp, -4($sp)\t\t# Save the frame pointer\n\
+	sub $fp, $sp, 8\t\t# Update the frame pointer\n";
 
 	int size = local_symbol_table.get_size();
+	int minus_size = params_list.get_size();
+	// cout<<"size : "<<size<<"  minus_size : "<<minus_size<<endl;
 	size = -size;
 	if (size > 0)
-		prologue << "\n\tsub $sp, $sp, " << (size + 4) << "\t\t# Make space for the locals\n";
+		prologue << "\n\tsub $sp, $sp, " << (size + 8 + minus_size) << "\t\t# Make space for the locals\n";
 	else
-		prologue << "\n\tsub $sp, $sp, 4\t\t#Make space for the locals\n";
+		prologue << "\n\tsub $sp, $sp, 8\t\t# Make space for the locals\n";
 
 	prologue << "# Prologue ends\n\n";
 
@@ -315,14 +322,15 @@ void Procedure::print_epilogue(ostream & file_buffer)
 	stringstream epilogue;
 
 	int size = local_symbol_table.get_size();
+	int minus_size = params_list.get_size();
 
 	size = -size;
 	if (size > 0)
-		epilogue << "# Epilogue Begins\n\tadd $sp, $sp, " << (size + 4) << "\n";
+		epilogue << "# Epilogue Begins\nepilogue:\n\tadd $sp, $sp, " << (size + 8 + minus_size) << "\n";
 	else
-		epilogue << "#Epilogue Begins\n\tadd $sp, $sp, 4\n";
+		epilogue << "# Epilogue Begins\nepilogue:\n\tadd $sp, $sp, 8\n";
 
-	epilogue << "\tlw $fp, 0($sp)  \n\tjr        $31\t\t# Jump back to the operating system.\n# Epilogue Ends\n\n";
+	epilogue << "\tlw $fp, -4($sp)  \n\tlw $ra, 0($sp)   \n\tjr        $31\t\t# Jump back to the called procedure\n# Epilogue Ends\n\n";
 
 	file_buffer << epilogue.str();
 }
