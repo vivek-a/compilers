@@ -192,6 +192,7 @@ Code_For_Ast & Assignment_Ast::compile()
 
 	Register_Descriptor * load_register = load_stmt.get_reg();
 
+	if(load_register == NULL)cout<<rhs->get_data_type()<<endl;
 	Code_For_Ast store_stmt = lhs->create_store_stmt(load_register);
 
 	// Store the statement in ic_list
@@ -594,10 +595,22 @@ Code_For_Ast & Return_Ast::compile()
 		Register_Descriptor * load_register = load_stmt.get_reg();
 		ic_list = load_stmt.get_icode_list();
 
-		Ics_Opd *  v_one_opd  = new Register_Addr_Opd(machine_dscr_object.spim_register_table[v1]);
-		Ics_Opd *  v_zero_opd  = new Register_Addr_Opd(machine_dscr_object.spim_register_table[v0]);
-		Icode_Stmt * m_stmt = new Move_IC_Stmt(moveit,v_zero_opd,v_one_opd);
-		ic_list.push_back(m_stmt);
+		load_register->used_for_expr_result = true;
+		if(proc->get_return_type()==int_data_type){
+			Ics_Opd *  v_one_opd  = new Register_Addr_Opd(load_register);
+			Ics_Opd *  v_zero_opd  = new Register_Addr_Opd(machine_dscr_object.spim_register_table[v1]);
+
+			Icode_Stmt * m_stmt = new Move_IC_Stmt(moveit,v_one_opd,v_zero_opd);
+			ic_list.push_back(m_stmt);
+
+		}
+		else if(proc->get_return_type()==float_data_type){
+			Ics_Opd *  v_one_opd  = new Register_Addr_Opd(load_register);
+			Ics_Opd *  v_zero_opd  = new Register_Addr_Opd(machine_dscr_object.spim_register_table[f0]);
+			Icode_Stmt * m_stmt = new Move_IC_Stmt(moveit,v_one_opd,v_zero_opd);
+			ic_list.push_back(m_stmt);
+		}
+		load_register->used_for_expr_result = false;
 	}
 	Icode_Stmt * goto_stmt = new Control_Flow_IC_Stmt(ret,NULL,NULL,NULL);
 	ic_list.push_back(goto_stmt);
@@ -1620,8 +1633,8 @@ Eval_Result & Fn_Call_Ast::evaluate(Local_Environment & eval_env, ostream & file
 Code_For_Ast & Fn_Call_Ast::compile()
 {
 	list<Icode_Stmt *> & ic_list = *new list<Icode_Stmt *>;
-
-	Ics_Opd * size_opd = new Const_Opd<int>( proc->get_params_list().get_size() * -1 );
+	int movestack = proc->get_params_list().get_size() * -1;
+	Ics_Opd * size_opd = new Const_Opd<int>(movestack);
 
 	Ics_Opd *  sp_opd  = new Register_Addr_Opd(machine_dscr_object.spim_register_table[sp]);	
 
@@ -1629,18 +1642,26 @@ Code_For_Ast & Fn_Call_Ast::compile()
 	list<Symbol_Table_Entry *>::reverse_iterator j;
 	
 	if(var_list){
-		for(i=var_list->rbegin() , j= proc->get_params_list().get_symbol_table().rbegin() ; i!=var_list->rend() ;  i++,j++)
+		int size=0 ;
+		for(i=var_list->rbegin() , j = proc->get_params_list().get_symbol_table().rbegin() ; i!=var_list->rend() ;  i++,j++)
 		{	
 			string temp = (*j)->get_variable_name();
-			
-			Ast * lhs = new Name_Ast( temp , *(*j) , lineno );
+
+			Symbol_Table_Entry * s = new Symbol_Table_Entry(temp,(*j)->get_data_type(),lineno);
+			(*s).set_start_offset(size);
+			int sp = proc->get_params_list().get_size_of_value_type((*j)->get_data_type());
+			size+=sp;
+			(*s).set_end_offset(size);
+			(*s).set_symbol_scope(param);
+
+			Ast * lhs = new Name_Ast( temp , *s , lineno );
 
 			Code_For_Ast & load_stmt = (*i)->compile();
 
 			Register_Descriptor * load_register = load_stmt.get_reg();
 
+			if(load_register == NULL)cout<<"sdlklsdfkj----------sdfsdkjjsdf----------2"<<endl;
 			Code_For_Ast store_stmt = lhs->create_store_stmt(load_register);
-
 			if (load_stmt.get_icode_list().empty() == false)
 				ic_list.splice(ic_list.end(), load_stmt.get_icode_list());
 
@@ -1648,25 +1669,38 @@ Code_For_Ast & Fn_Call_Ast::compile()
 				ic_list.splice(ic_list.end(), store_stmt.get_icode_list());
 		}
 	}
-
-	Icode_Stmt * sp_sub = new Compute_IC_Stmt(sub,sp_opd,size_opd,sp_opd);
-	ic_list.push_back(sp_sub);
-
+	if(movestack != 0){
+		Icode_Stmt * sp_sub = new Compute_IC_Stmt(sub,sp_opd,size_opd,sp_opd);
+		ic_list.push_back(sp_sub);
+	}
 	Ics_Opd * ra_opd = new Const_Opd<string>(proc->get_proc_name());
 	Icode_Stmt * goto_stmt = new Control_Flow_IC_Stmt(call,NULL,NULL,ra_opd);
 	ic_list.push_back(goto_stmt);
 
-	Icode_Stmt * sp_add = new Compute_IC_Stmt(add,sp_opd,size_opd,sp_opd);
-	ic_list.push_back(sp_add);
-
-	if(proc->get_return_type()!=void_data_type){
+	if(movestack!=0){
+		Icode_Stmt * sp_add = new Compute_IC_Stmt(add,sp_opd,size_opd,sp_opd);
+		ic_list.push_back(sp_add);
+	}
+	Register_Descriptor * r;
+	if(proc->get_return_type()==int_data_type){
+		r =  machine_dscr_object.get_new_register();
+		Ics_Opd *  v_zero_opd  = new Register_Addr_Opd(r);
 		Ics_Opd *  v_one_opd  = new Register_Addr_Opd(machine_dscr_object.spim_register_table[v1]);
-		Ics_Opd *  v_zero_opd  = new Register_Addr_Opd(machine_dscr_object.spim_register_table[v0]);
+		Icode_Stmt * m_stmt = new Move_IC_Stmt(moveit,v_one_opd,v_zero_opd);
+		ic_list.push_back(m_stmt);
+
+	}
+	else if(proc->get_return_type()==float_data_type){
+		r = machine_dscr_object.get_new_float_register();
+		Ics_Opd *  v_zero_opd  = new Register_Addr_Opd(r);
+		Ics_Opd *  v_one_opd  = new Register_Addr_Opd(machine_dscr_object.spim_register_table[f0]);
 		Icode_Stmt * m_stmt = new Move_IC_Stmt(moveit,v_one_opd,v_zero_opd);
 		ic_list.push_back(m_stmt);
 	}
+
+
 	
-	Code_For_Ast & ret_code = *new Code_For_Ast(ic_list, NULL);
+	Code_For_Ast & ret_code = *new Code_For_Ast(ic_list, r);
 
 	return ret_code;	
 }

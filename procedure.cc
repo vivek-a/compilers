@@ -55,7 +55,25 @@ Procedure::~Procedure()
 }
 
 Symbol_Table & Procedure::get_params_list()
-{
+{	
+	params_list.set_start_offset_of_first_symbol(0);
+	params_list.assign_offsets();
+	local_symbol_table.set_start_offset_of_first_symbol(-1 * params_list.get_size());
+	local_symbol_table.assign_offsets();
+
+	list<Symbol_Table_Entry *>::iterator i;
+	list<Symbol_Table_Entry *>::iterator j;
+	int size_in = 8;
+	for (i = local_symbol_table.get_symbol_table().begin(), j = params_list.get_symbol_table().begin(); j != params_list.get_symbol_table().end(); i++,j++)
+	{
+		// cout<<"size of scope :i: "<<(*i)->get_symbol_scope()<<endl;
+		// cout<<"size of scope :j: "<<(*j)->get_symbol_scope()<<endl;
+		
+		int size =  local_symbol_table.get_size_of_value_type((*i)->get_data_type());
+		size_in -= size;
+		(*i)->set_start_offset(size_in);
+		(*i)->set_end_offset(size_in+size);
+	}
 	return this->params_list;
 }
 
@@ -66,13 +84,33 @@ vector<int> Procedure::get_goto_list()
 
 void Procedure::append_local_list(Symbol_Table & new_list)
 {
-	list<Symbol_Table_Entry *> list = new_list.get_symbol_table();
-	while (!list.empty())
+	list<Symbol_Table_Entry *> lis = new_list.get_symbol_table();
+	while (!lis.empty())
 	{
-		local_symbol_table.push_symbol(list.front());
-		list.pop_front();		
+		local_symbol_table.push_symbol(lis.front());
+		lis.pop_front();		
 	}
 	local_symbol_table.set_table_scope(local);
+
+	params_list.set_start_offset_of_first_symbol(0);
+	params_list.assign_offsets();
+	local_symbol_table.set_start_offset_of_first_symbol(-1 * params_list.get_size());
+	local_symbol_table.assign_offsets();
+
+	list<Symbol_Table_Entry *>::iterator i;
+	list<Symbol_Table_Entry *>::iterator j;
+	int size_in = 8;
+	for (i = local_symbol_table.get_symbol_table().begin(), j = params_list.get_symbol_table().begin(); j != params_list.get_symbol_table().end(); i++,j++)
+	{
+		// cout<<"size of scope :i: "<<(*i)->get_symbol_scope()<<endl;
+		// cout<<"size of scope :j: "<<(*j)->get_symbol_scope()<<endl;
+		
+		int size =  local_symbol_table.get_size_of_value_type((*i)->get_data_type());
+		size_in -= size;
+		(*i)->set_start_offset(size_in);
+		(*i)->set_end_offset(size_in+size);
+	}
+
 }
 
 void Procedure::add_to_goto_list(int num){
@@ -89,16 +127,17 @@ void Procedure::set_basic_block_list(list<Basic_Block *> & bb_list)
 	basic_block_list = bb_list;
 }
 
-void Procedure::set_params_list(Symbol_Table & params_list)
+void Procedure::set_params_list(Symbol_Table & params)
 {
-	this->params_list = params_list;
-	local_symbol_table.set_table_scope(local);
+	this->params_list = params;
+	this->params_list.set_table_scope(local);
 }
 
 void Procedure::set_local_list(Symbol_Table & new_list)
 {
 	local_symbol_table = new_list;
 	local_symbol_table.set_table_scope(local);
+
 }
 
 Data_Type Procedure::get_return_type()
@@ -249,18 +288,32 @@ Eval_Result & Procedure::evaluate(ostream & file_buffer,list<Eval_Result_Value *
 void Procedure::compile()
 {
 	// assign offsets to local symbol table
-	local_symbol_table.set_start_offset_of_first_symbol(4);
-	local_symbol_table.set_size(4);
+	// cout<<"size of local :: "<<local_symbol_table.get_table_scope();
+	// cout<<"size of param :: "<<params_list.get_table_scope();
+
+	params_list.set_start_offset_of_first_symbol(0);
+	params_list.assign_offsets();
+	local_symbol_table.set_start_offset_of_first_symbol(-1 * params_list.get_size());
 	local_symbol_table.assign_offsets();
 
-	params_list.set_start_offset_of_first_symbol(4);
-	params_list.set_size(4);
-	params_list.assign_offsets();
+	list<Symbol_Table_Entry *>::iterator i;
+	list<Symbol_Table_Entry *>::iterator j;
+	int size_in = 8;
+	for (i = local_symbol_table.get_symbol_table().begin(), j = params_list.get_symbol_table().begin(); j != params_list.get_symbol_table().end(); i++,j++)
+	{
+		// cout<<"size of scope :i: "<<(*i)->get_symbol_scope()<<endl;
+		// cout<<"size of scope :j: "<<(*j)->get_symbol_scope()<<endl;
+		
+		int size =  local_symbol_table.get_size_of_value_type((*i)->get_data_type());
+		size_in -= size;
+		(*i)->set_start_offset(size_in);
+		(*i)->set_end_offset(size_in+size);
+	}
 
 	// compile the program by visiting each basic block
-	list<Basic_Block *>::iterator i;
-	for(i = basic_block_list.begin(); i != basic_block_list.end(); i++)
-		(*i)->compile();
+	list<Basic_Block *>::iterator p;
+	for(p = basic_block_list.begin(); p != basic_block_list.end(); p++)
+		(*p)->compile();
 }
 
 void Procedure::print_icode(ostream & file_buffer)

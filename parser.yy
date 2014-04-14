@@ -908,6 +908,30 @@ relational_expression:
 	{
 		$$=$1;
 	}
+|
+	function_call
+	{
+		$$ = $1;
+	}
+|
+	'(' FLOAT ')' function_call
+	{		
+		int line = get_line_number();
+		$$ = new Typecast_Expr_Ast($4,"float",line);
+	}
+|
+	'(' INTEGER ')' function_call
+	{
+		int line = get_line_number();
+		$$ = new Typecast_Expr_Ast($4,"integer",line);
+	}
+|
+	'(' DOUBLE ')' function_call
+	{	
+		int line = get_line_number();
+		$$ = new Typecast_Expr_Ast($4,"double",line);
+	}
+
 ;
 
 
@@ -930,6 +954,7 @@ arithmetic_expression:
 	{
 		$$=$1;
 	}
+
 ;
 
 term:
@@ -1048,11 +1073,6 @@ constant:
 			float num = $1;
 			$$ = new Number_Ast<float>(num, float_data_type, get_line_number());
 		}
-	}
-|
-	function_call
-	{
-		$$ = $1;
 	}
 ;
 

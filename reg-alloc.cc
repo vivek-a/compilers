@@ -292,6 +292,7 @@ void Machine_Description::initialize_register_table()
 	spim_register_table[fp] = new Register_Descriptor(fp, "fp", int_num, pointer);
 	spim_register_table[ra] = new Register_Descriptor(ra, "ra", int_num, ret_address);
 
+	spim_register_table[f0] = new Register_Descriptor(f0, "f0", float_num, fn_result);
 	spim_register_table[f2] = new Register_Descriptor(f2, "f2", float_num, gp_data);
 	spim_register_table[f4] = new Register_Descriptor(f4, "f4", float_num, gp_data);
 	spim_register_table[f6] = new Register_Descriptor(f6, "f6", float_num, gp_data);
@@ -330,7 +331,7 @@ void Machine_Description::initialize_instruction_table()
 	spim_instruction_table[mtc1] = new Instruction_Descriptor(mtc1, "mtc1", "mtc1", "", i_uminus, a_uminus);
 	spim_instruction_table[Goto] = new Instruction_Descriptor(Goto, "goto", "j", "", i_op_o1, a_op_o1);
 	spim_instruction_table[call] = new Instruction_Descriptor(call, "call", "jal", "", i_call, a_call);
-	spim_instruction_table[moveit] = new Instruction_Descriptor(moveit, "move", "move", "", i_move, a_move);
+	spim_instruction_table[moveit] = new Instruction_Descriptor(moveit, "move", "move", "move", i_move, a_move);
 	spim_instruction_table[ret] = new Instruction_Descriptor(ret, "goto epilogue", "j epilogue", "", i_ret, a_ret);
 }
 

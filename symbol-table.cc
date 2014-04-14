@@ -187,7 +187,7 @@ int Symbol_Table::get_start_offset_of_first_symbol()
 
 void Symbol_Table::set_size(int n)
 {
-	size_in_bytes;
+	size_in_bytes=n;
 }
 
 int Symbol_Table::get_size()
@@ -198,12 +198,15 @@ int Symbol_Table::get_size()
 void Symbol_Table::assign_offsets()
 {
 	list<Symbol_Table_Entry *>::iterator i;
+	int size_in = start_offset_of_first_symbol;
+	size_in_bytes = 0;
 	for (i = variable_table.begin(); i != variable_table.end(); i++)
 	{
 		int size = get_size_of_value_type((*i)->get_data_type());
-		(*i)->set_start_offset(size_in_bytes);
+		(*i)->set_start_offset(size_in);
 		size_in_bytes += size;
-		(*i)->set_end_offset(size_in_bytes);
+		size_in += size;
+		(*i)->set_end_offset(size_in);
 	}
 }
 

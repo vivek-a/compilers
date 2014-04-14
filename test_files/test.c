@@ -1,12 +1,14 @@
 main()
 {
-	int a = 3;
-	int b = 5;
-
-	fn();
+	int d = 3;
+	int e = 5;
+	int g = 2;
+	int f = fn(d,e,g);
 }
 
-fn()
+fn(int x,int b,int c)
 {
-	int c = 4;
+	int d = 3;
+	int w = 4;
+	return (x+b+c*2);
 }

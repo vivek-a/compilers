@@ -90,13 +90,18 @@ void Mem_Addr_Opd::print_asm_opd(ostream & file_buffer)
 {
 	Table_Scope symbol_scope = symbol_entry->get_symbol_scope();
 
-	CHECK_INVARIANT(((symbol_scope == local) || (symbol_scope == global)), 
+	CHECK_INVARIANT(((symbol_scope == local) || (symbol_scope == global) || (symbol_scope == param)), 
 			"Wrong scope value");
 
 	if (symbol_scope == local)
 	{
 		int offset = symbol_entry->get_start_offset();
 		file_buffer << offset << "($fp)";
+	}
+	else if (symbol_scope == param)
+	{
+		int offset = symbol_entry->get_start_offset();
+		file_buffer << offset << "($sp)";
 	}
 	else
 		file_buffer << symbol_entry->get_variable_name();
@@ -281,6 +286,7 @@ void Move_IC_Stmt::print_icode(ostream & file_buffer)
 			break;
 	case i_move:
 			file_buffer << "\t" << operation_name ;
+			if(result->get_opd()==float_opd)file_buffer << ".d";
 			file_buffer << ":    \t";
 			result->print_ics_opd(file_buffer);
 			file_buffer << " <- ";
@@ -331,7 +337,10 @@ void Move_IC_Stmt::print_assembly(ostream & file_buffer)
 			break; 
 
 	case a_move:
-			file_buffer << "\t" << op_name;
+			file_buffer << "\t";
+			if(result->get_opd()==float_opd)
+				file_buffer << op_desc.get_ic_symbol() << ".d";
+			else file_buffer << op_name;
 			file_buffer << " ";
 			result->print_asm_opd(file_buffer);
 			file_buffer << ", ";

@@ -42,7 +42,8 @@ typedef enum
 typedef enum
 {
 	global,
-	local
+	local,
+	param
 } Table_Scope;
 
 class Symbol_Table
@@ -75,7 +76,7 @@ public:
 
 	list<Symbol_Table_Entry *> & get_symbol_table();
 	// compile
-private:
+
 	int get_size_of_value_type(Data_Type dt);
 
 public:
