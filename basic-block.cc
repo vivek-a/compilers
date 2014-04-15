@@ -96,8 +96,6 @@ void Basic_Block::compile()
 	{
 		Ast * ast = *i;
 
-		// if (typeid(*ast) != typeid(Return_Ast))
-		// {
 		if (command_options.is_do_lra_selected() == true)
 		{
 			Lra_Outcome lra;

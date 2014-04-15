@@ -427,23 +427,3 @@ Register_Descriptor * Machine_Description::get_new_float_register()
 	CHECK_INVARIANT(CONTROL_SHOULD_NOT_REACH, 
 			"Error in get_new_reg or register requirements of input program cannot be met");
 }
-
-// Register_Descriptor * Machine_Description::get_new_arg_register()
-// {
-// 	Register_Descriptor * reg_desc;
-
-// 	( == gp_data) && (lra_symbol_list.empty()) && (!used_for_expr_result)
-
-// 	map<Spim_Register, Register_Descriptor *>::iterator i;
-// 	for (i = spim_register_table.begin(); i != spim_register_table.end(); i++)
-// 	{
-// 		reg_desc = i->second;
-
-// 		if (reg_desc->reg_use==argument && reg_desc->value_type == float_num )
-// 			return reg_desc;
-// 	}
-
-// 	CHECK_INVARIANT(CONTROL_SHOULD_NOT_REACH, 
-// 			"Error in get_new_asrg_reg or register requirements of input program cannot be met");
-// }
-

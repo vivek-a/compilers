@@ -20,8 +20,8 @@ do
 	echo $file
 	f=`echo $file | cut -d '/' -f2`
 	f=`echo $f | cut -d '.' -f1`
-	./cfglp $file  -d  -icode > out1
-	./cfglp64 $file  -d  -icode > out2
+	./cfglp $file  -d   -symtab -icode -lra> out1
+	./cfglp64 $file  -d  -symtab -icode -lra> out2
 	diff  out1 out2  > tmp/$f
 done
 

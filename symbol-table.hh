@@ -56,6 +56,9 @@ class Symbol_Table
 	int start_offset_of_first_symbol;
 
 public:
+	int true_bit;
+	int parameter_list_size;
+
 	Symbol_Table();
 	~Symbol_Table();
 

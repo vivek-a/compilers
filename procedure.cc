@@ -60,6 +60,7 @@ Symbol_Table & Procedure::get_params_list()
 	params_list.assign_offsets();
 	local_symbol_table.set_start_offset_of_first_symbol(-1 * params_list.get_size());
 	local_symbol_table.assign_offsets();
+	local_symbol_table.parameter_list_size = params_list.get_symbol_table().size();
 
 	list<Symbol_Table_Entry *>::iterator i;
 	list<Symbol_Table_Entry *>::iterator j;
@@ -92,24 +93,24 @@ void Procedure::append_local_list(Symbol_Table & new_list)
 	}
 	local_symbol_table.set_table_scope(local);
 
-	params_list.set_start_offset_of_first_symbol(0);
-	params_list.assign_offsets();
-	local_symbol_table.set_start_offset_of_first_symbol(-1 * params_list.get_size());
-	local_symbol_table.assign_offsets();
+	// params_list.set_start_offset_of_first_symbol(0);
+	// params_list.assign_offsets();
+	// local_symbol_table.set_start_offset_of_first_symbol(-1 * params_list.get_size());
+	// local_symbol_table.assign_offsets();
 
-	list<Symbol_Table_Entry *>::iterator i;
-	list<Symbol_Table_Entry *>::iterator j;
-	int size_in = 8;
-	for (i = local_symbol_table.get_symbol_table().begin(), j = params_list.get_symbol_table().begin(); j != params_list.get_symbol_table().end(); i++,j++)
-	{
-		// cout<<"size of scope :i: "<<(*i)->get_symbol_scope()<<endl;
-		// cout<<"size of scope :j: "<<(*j)->get_symbol_scope()<<endl;
+	// list<Symbol_Table_Entry *>::iterator i;
+	// list<Symbol_Table_Entry *>::iterator j;
+	// int size_in = 8;
+	// for (i = local_symbol_table.get_symbol_table().begin(), j = params_list.get_symbol_table().begin(); j != params_list.get_symbol_table().end(); i++,j++)
+	// {
+	// 	// cout<<"size of scope :i: "<<(*i)->get_symbol_scope()<<endl;
+	// 	// cout<<"size of scope :j: "<<(*j)->get_symbol_scope()<<endl;
 		
-		int size =  local_symbol_table.get_size_of_value_type((*i)->get_data_type());
-		size_in -= size;
-		(*i)->set_start_offset(size_in);
-		(*i)->set_end_offset(size_in+size);
-	}
+	// 	int size =  local_symbol_table.get_size_of_value_type((*i)->get_data_type());
+	// 	size_in -= size;
+	// 	(*i)->set_start_offset(size_in);
+	// 	(*i)->set_end_offset(size_in+size);
+	// }
 
 }
 
@@ -174,7 +175,6 @@ void Procedure::print(ostream & file_buffer)
 
 	if ((command_options.is_show_symtab_selected()) || (command_options.is_show_program_selected()))
 	{
-		file_buffer << "   Local Declarartions\n";
 		local_symbol_table.print(file_buffer);
 	}
 
@@ -293,8 +293,11 @@ void Procedure::compile()
 
 	params_list.set_start_offset_of_first_symbol(0);
 	params_list.assign_offsets();
+	// params_list.true_bit = 1;
 	local_symbol_table.set_start_offset_of_first_symbol(-1 * params_list.get_size());
 	local_symbol_table.assign_offsets();
+	local_symbol_table.true_bit = 1;
+	local_symbol_table.parameter_list_size = params_list.get_symbol_table().size();
 
 	list<Symbol_Table_Entry *>::iterator i;
 	list<Symbol_Table_Entry *>::iterator j;

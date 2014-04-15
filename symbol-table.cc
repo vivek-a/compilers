@@ -43,6 +43,8 @@ Symbol_Table::Symbol_Table()
 {
 	start_offset_of_first_symbol = 0;
 	size_in_bytes = 0;
+	true_bit = 0;
+	parameter_list_size=0;
 }
 
 Symbol_Table::~Symbol_Table()
@@ -146,10 +148,17 @@ void Symbol_Table::create(Local_Environment & local_global_variables_table)
 
 void Symbol_Table::print(ostream & file_buffer)
 {
+	int track = 0;
 	list<Symbol_Table_Entry *>::iterator i;
+
+	if(scope!=global)file_buffer << "   Fromal Parameter List\n";		
 
 	for(i = variable_table.begin(); i != variable_table.end(); i++)
 	{
+		// cout<<"track is :: "<<track<<"parameter_list_size :: "<<parameter_list_size<<endl;
+		if(track++ == parameter_list_size && scope!=global)
+			file_buffer << "   Local Declarartions\n";
+
 		string name = (*i)->get_variable_name();
 		Data_Type dt = (*i)->get_data_type();
 		int start_off = (*i)->get_start_offset();
@@ -166,11 +175,19 @@ void Symbol_Table::print(ostream & file_buffer)
 
 		file_buffer << " Entity Type: VAR";
 
-		if (start_off == end_off)
+		// cout<<"true bit :: is :: "<<true_bit<<endl;
+
+		if (true_bit==0 || (start_off==end_off))
 			file_buffer << " (No offset assigned yet)\n";
 		else
-			file_buffer << " Start Offset: " << -start_off << " End Offset: " << -end_off << "\n";
-	}
+			if(track>parameter_list_size)
+				file_buffer << " Start Offset: " << -start_off << " End Offset: " << -end_off << "\n";
+			else
+				file_buffer << " Start Offset: " << start_off << " End Offset: " << end_off << "\n";
+	}			
+
+	if(this->get_symbol_table().size()==parameter_list_size  && scope!=global)
+		file_buffer << "   Local Declarartions\n";
 }
 
 // Compile
