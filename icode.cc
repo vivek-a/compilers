@@ -603,6 +603,8 @@ void Control_Flow_IC_Stmt::print_assembly(ostream & file_buffer)
 
 		case a_ret:
 			file_buffer << "\t" << op_name;			
+			file_buffer << "_";
+			opd3->print_asm_opd(file_buffer);
 			file_buffer << "\n";
 
 			break; 

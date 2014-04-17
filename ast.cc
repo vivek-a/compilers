@@ -612,7 +612,9 @@ Code_For_Ast & Return_Ast::compile()
 		}
 		load_register->used_for_expr_result = false;
 	}
-	Icode_Stmt * goto_stmt = new Control_Flow_IC_Stmt(ret,NULL,NULL,NULL);
+
+	Ics_Opd * const_opd = new Const_Opd<string>(proc->get_proc_name());
+	Icode_Stmt * goto_stmt = new Control_Flow_IC_Stmt(ret,NULL,NULL,const_opd);
 	ic_list.push_back(goto_stmt);
 
 	Code_For_Ast & ret_code = *new Code_For_Ast(ic_list, NULL);

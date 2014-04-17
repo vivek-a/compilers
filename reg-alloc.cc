@@ -332,7 +332,7 @@ void Machine_Description::initialize_instruction_table()
 	spim_instruction_table[Goto] = new Instruction_Descriptor(Goto, "goto", "j", "", i_op_o1, a_op_o1);
 	spim_instruction_table[call] = new Instruction_Descriptor(call, "call", "jal", "", i_call, a_call);
 	spim_instruction_table[moveit] = new Instruction_Descriptor(moveit, "move", "move", "move", i_move, a_move);
-	spim_instruction_table[ret] = new Instruction_Descriptor(ret, "goto epilogue", "j epilogue", "", i_ret, a_ret);
+	spim_instruction_table[ret] = new Instruction_Descriptor(ret, "return", "j epilogue", "", i_ret, a_ret);
 }
 
 void Machine_Description::validate_init_local_register_mapping()
